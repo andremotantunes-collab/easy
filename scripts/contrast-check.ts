@@ -78,6 +78,7 @@ const checks = (t: Tokens): Check[] => [
   { name: 'texto principal / surface', fg: t['--text'], bg: t['--surface'], min: 7 },
   { name: 'texto secundário / bg', fg: t['--text-muted'], bg: t['--bg'], min: 4.5 },
   { name: 'texto secundário / surface', fg: t['--text-muted'], bg: t['--surface'], min: 4.5 },
+  { name: 'texto / segmento ativo', fg: t['--text'], bg: t['--segment-active'], min: 7 },
   { name: 'texto sobre acento', fg: t['--accent-text'], bg: t['--accent'], min: 4.5 },
   { name: 'fatia Sobras / surface', fg: t['--cat-sobras'], bg: t['--surface'], min: 3 },
   { name: 'fatia Fixas / surface', fg: t['--cat-fixas'], bg: t['--surface'], min: 3 },

@@ -63,7 +63,7 @@ export function Definicoes() {
               aria-pressed={tema === o.id}
               className={
                 'min-h-[44px] flex-1 rounded-[8px] text-sm font-medium transition-opacity duration-150 ' +
-                (tema === o.id ? 'bg-[var(--bg)] text-[var(--text)]' : 'text-[var(--text-muted)]')
+                (tema === o.id ? 'bg-[var(--segment-active)] text-[var(--text)]' : 'text-[var(--text-muted)]')
               }
             >
               {o.label}

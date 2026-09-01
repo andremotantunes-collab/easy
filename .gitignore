@@ -4,3 +4,4 @@ dist-ssr
 .tmp
 *.local
 .DS_Store
+preview

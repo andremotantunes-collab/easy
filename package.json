@@ -13,7 +13,9 @@
     "check:contrast": "node --experimental-strip-types scripts/contrast-check.ts",
     "check:brand": "vitest run src/lib/brand.test.ts",
     "icons": "node scripts/gen-icons.mjs",
-    "shots": "node scripts/screenshots.mjs"
+    "shots": "node scripts/screenshots.mjs",
+    "verify": "node scripts/verify.mjs",
+    "sequence": "node scripts/slider-sequence.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -85,15 +85,18 @@ export function Donut({
       style={{ display: 'block' }}
     >
       <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
-        {/* Track, so an empty budget still reads as a ring. */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="var(--surface-2)"
-          strokeWidth={stroke}
-        />
+        {/* Track only when there is nothing to draw: otherwise it shows
+            through the 2px gaps and muddies the separation between slices. */}
+        {total <= 0 ? (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="var(--surface-2)"
+            strokeWidth={stroke}
+          />
+        ) : null}
         {drawn.map((s) =>
           s.visible ? (
             <circle

@@ -15,14 +15,12 @@ function Slider({
   label,
   value,
   max,
-  color,
   amount,
   onChange,
 }: {
   label: string
   value: number
   max: number
-  color: string
   amount: string
   onChange: (v: number) => void
 }) {
@@ -43,7 +41,6 @@ function Slider({
         value={value}
         aria-label={label}
         aria-valuetext={`${value} por cento`}
-        style={{ accentColor: color }}
         onChange={(e) => onChange(Math.min(Number(e.target.value), max))}
       />
     </div>
@@ -124,7 +121,6 @@ export function Plano() {
           label={copy.plano.investimentos}
           value={budget.alocacao.investimentos}
           max={maxInvest}
-          color="var(--cat-invest)"
           amount={formatEUR(b.investimentos)}
           onChange={(v) => clamp(v, maxInvest, (n) => setAlocacao({ investimentos: n }))}
         />
@@ -132,7 +128,6 @@ export function Plano() {
           label={copy.plano.poupanca}
           value={budget.alocacao.poupanca}
           max={maxPoupanca}
-          color="var(--cat-poupanca)"
           amount={formatEUR(b.poupanca)}
           onChange={(v) => clamp(v, maxPoupanca, (n) => setAlocacao({ poupanca: n }))}
         />
@@ -155,7 +150,7 @@ export function Plano() {
               className={
                 'min-h-[44px] flex-1 rounded-[8px] text-sm font-medium transition-opacity duration-150 ' +
                 (budget.modoDespesas === modo
-                  ? 'bg-[var(--bg)] text-[var(--text)]'
+                  ? 'bg-[var(--segment-active)] text-[var(--text)]'
                   : 'text-[var(--text-muted)]')
               }
             >
@@ -169,7 +164,6 @@ export function Plano() {
             label={copy.plano.despesas}
             value={budget.despesasPercentagem}
             max={maxFixas}
-            color="var(--cat-fixas)"
             amount={formatEUR(b.despesasFixas)}
             onChange={(v) => clamp(v, maxFixas, (n) => set({ despesasPercentagem: n }))}
           />

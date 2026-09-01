@@ -12,6 +12,9 @@
   --border:        #E1E1E4;
   /* Cards carry a hairline in light and none in dark, per the design system. */
   --card-border:   #E1E1E4;
+  /* Selected pill of a segmented control: must read LIGHTER than its track in
+     both themes, so it cannot simply be --bg. */
+  --segment-active: #FFFFFF;
 
   /* texto */
   --text:          #0A0A0B;   /* numeros e titulos */
@@ -40,7 +43,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0B0B0C; --surface: #151517; --surface-2: #1F1F22; --border: #2A2A2E; --card-border: transparent;
+    --bg: #0B0B0C; --surface: #151517; --surface-2: #1F1F22; --border: #2A2A2E; --card-border: transparent; --segment-active: #34343A;
     --text: #FAFAFA; --text-muted: #A1A1AA;
     --accent: #2DD4BF; --accent-text: #0B0B0C;
     --cat-sobras: #2DD4BF; --cat-fixas: #EDEDF2; --cat-invest: #A6A6AE; --cat-poupanca: #62626A;
@@ -49,7 +52,7 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: #0B0B0C; --surface: #151517; --surface-2: #1F1F22; --border: #2A2A2E; --card-border: transparent;
+  --bg: #0B0B0C; --surface: #151517; --surface-2: #1F1F22; --border: #2A2A2E; --card-border: transparent; --segment-active: #34343A;
   --text: #FAFAFA; --text-muted: #A1A1AA;
   --accent: #2DD4BF; --accent-text: #0B0B0C;
   --cat-sobras: #2DD4BF; --cat-fixas: #EDEDF2; --cat-invest: #A6A6AE; --cat-poupanca: #62626A;

@@ -139,8 +139,7 @@ export function Fixas() {
 
   return (
     <Screen title={copy.fixas.titulo}>
-      <div className="mb-3 flex items-center justify-between">
-        <Label>{copy.fixas.titulo}</Label>
+      <div className="mb-3 flex items-center justify-end">
         <button
           onClick={() => setSheetOpen(true)}
           aria-label={copy.fixas.adicionar}

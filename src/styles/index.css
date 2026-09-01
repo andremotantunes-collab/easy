@@ -20,27 +20,35 @@
   --color-negative: var(--negative);
 }
 
-html {
-  background: var(--bg);
-  /* The manual toggle sets data-theme; this keeps form controls and
-     scrollbars in step with it instead of with the OS. */
-  color-scheme: light;
-}
-:root[data-theme='dark'] { color-scheme: dark; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) { color-scheme: dark; }
-}
+/* Element resets live in @layer base on purpose. Unlayered rules beat every
+   layered one in the cascade, so a bare `button { background: none }` would
+   silently cancel Tailwind's bg-* utilities on every button in the app. */
+@layer base {
+  html {
+    background: var(--bg);
+    /* The manual toggle sets data-theme; this keeps form controls and
+       scrollbars in step with it instead of with the OS. */
+    color-scheme: light;
+  }
+  :root[data-theme='dark'] { color-scheme: dark; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) { color-scheme: dark; }
+  }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 22px;
-  -webkit-font-smoothing: antialiased;
-  /* No horizontal scroll at 390px, ever. */
-  overflow-x: hidden;
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 22px;
+    -webkit-font-smoothing: antialiased;
+    /* No horizontal scroll at 390px, ever. */
+    overflow-x: hidden;
+  }
+
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { background: none; border: 0; cursor: pointer; }
 }
 
 /* Every number in the product is tabular. A value must never jitter when it
@@ -51,9 +59,6 @@ input[inputmode='decimal'] {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }
-
-button, input, select, textarea { font: inherit; color: inherit; }
-button { background: none; border: 0; cursor: pointer; }
 
 /* Type scale from the design system. */
 .t-hero  { font-size: 48px; line-height: 52px; font-weight: 600; letter-spacing: -0.02em; }
