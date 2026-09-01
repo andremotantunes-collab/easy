@@ -1,0 +1,57 @@
+/* Easy. design tokens.
+   Every colour the product uses lives here. Three blocks carry the SAME values:
+   :root (light), the prefers-color-scheme block (system dark) and
+   :root[data-theme="dark"] (manual override), so the toggle wins in both
+   directions and no colour is ever defined only inside a media query. */
+
+:root {
+  /* superficies */
+  --bg:            #FFFFFF;
+  --surface:       #F5F5F6;
+  --surface-2:     #EBEBED;
+  --border:        #E1E1E4;
+  /* Cards carry a hairline in light and none in dark, per the design system. */
+  --card-border:   #E1E1E4;
+
+  /* texto */
+  --text:          #0A0A0B;   /* numeros e titulos */
+  --text-muted:    #5F5F66;   /* labels, legendas */
+
+  /* acento unico */
+  --accent:        #0F766E;   /* o "bolo" / accao primaria */
+  --accent-text:   #FFFFFF;
+
+  /* categorias do donut - UMA cor (o bolo) + tres cinzentos que saem da conta.
+     Tons re-escalonados a partir dos do briefing para passarem o piso de
+     separacao de visao normal do validador (ver DECISIONS.md). */
+  --cat-sobras:    #0F766E;   /* Sobras - o bolo (acento)    5.0:1 vs surface */
+  --cat-fixas:     #26262E;   /* Despesas fixas             13.9:1 */
+  --cat-invest:    #55555D;   /* Investimentos               6.7:1 */
+  --cat-poupanca:  #8D8D95;   /* Poupanca / objetivos        3.0:1 */
+
+  /* semantico (usar com parcimonia) */
+  --positive:      #15803D;
+  --warning:       #B45309;
+  --negative:      #B91C1C;
+
+  --radius:        16px;
+  --radius-sm:     10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B0B0C; --surface: #151517; --surface-2: #1F1F22; --border: #2A2A2E; --card-border: transparent;
+    --text: #FAFAFA; --text-muted: #A1A1AA;
+    --accent: #2DD4BF; --accent-text: #0B0B0C;
+    --cat-sobras: #2DD4BF; --cat-fixas: #EDEDF2; --cat-invest: #A6A6AE; --cat-poupanca: #62626A;
+    --positive: #4ADE80; --warning: #FBBF24; --negative: #F87171;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0B0B0C; --surface: #151517; --surface-2: #1F1F22; --border: #2A2A2E; --card-border: transparent;
+  --text: #FAFAFA; --text-muted: #A1A1AA;
+  --accent: #2DD4BF; --accent-text: #0B0B0C;
+  --cat-sobras: #2DD4BF; --cat-fixas: #EDEDF2; --cat-invest: #A6A6AE; --cat-poupanca: #62626A;
+  --positive: #4ADE80; --warning: #FBBF24; --negative: #F87171;
+}
