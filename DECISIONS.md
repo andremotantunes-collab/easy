@@ -617,6 +617,37 @@ existem só no plano Enterprise. Como a app não tem servidor nem dados no
 servidor, o que fica exposto é o código e mais nada. Quem quiser o código
 fechado tem de trocar de alojamento, não de definição.
 
-## 33. Âmbito que ficou fora
+## 33. A marca voltou a ser um S., e desta vez desenhado
+
+A decisão 25 tinha trocado o **S.** por um **E.**, com o argumento de que numa
+app chamada **Easy.** um S. não diz nada a ninguém. O argumento era bom e a
+escolha é do dono da marca: voltou a ser **S.**, no mesmo sistema — mesmo
+azulejo, mesmo gradiente, mesmo ponto final, mesma altura de caixa.
+
+O que muda é como o S. está feito. Não são dois arcos a olho: são **dois bojos
+elípticos tangentes** em (32,32), o de cima com centro (32; 25,55) e o de baixo
+com centro (32; 38,45), ambos com 8 de raio horizontal e 6,45 de raio vertical.
+Tangentes, a curva atravessa o meio na horizontal — e o S. não ganha o joelho
+torto que arcos desenhados à mão ganham sempre.
+
+A parte que só se descobre a olhar é a **abertura**. A primeira tentativa
+fechava cada bojo 305 graus e aos 40 px lia-se um **8**, não um S. As pontas
+passaram a cortar 12 graus depois do ponto mais largo de cada bojo (282 graus
+de volta), e o contraforma abre o suficiente para a letra se ler ao tamanho a
+que trabalha. Verificado a 40, 64, 180 e 200 px.
+
+As três regras da decisão 25 mantêm-se, medidas com o `getBBox` do próprio
+browser: a tinta corre de 16 a 48 num quadrado de 64 — a **mesma** altura de
+caixa do E. que lá estava; é centrada nos limites do **traço** e não do caminho
+(20,90 a 43,10, centro exato de 64), e o S. é mais estreito do que a caixa
+quadrada pediria, que é o que um S. é; e o par letra+ponto continua equilibrado
+**pela tinta**, deslocado 1,5 unidades.
+
+Mudou nos três sítios onde o desenho vive, e não só no atalho do telemóvel: o
+`public/favicon.svg` do separador, o `Logo.tsx` dentro da app, e o
+`scripts/gen-icons.mjs` que gera os PNG de 180, 192 e 512. Um atalho com S. ao
+lado de um cabeçalho com E. seria pior do que qualquer das duas letras.
+
+## 34. Âmbito que ficou fora
 
 Nada foi cortado em silêncio. Ver a secção "O que ficou de fora" no `README.md`.

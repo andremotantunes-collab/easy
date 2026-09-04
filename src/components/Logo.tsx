@@ -1,20 +1,26 @@
-const CAMINHO = 'M 41 19.1 L 23 19.1 L 23 44.9 L 41 44.9 M 23 32 L 36.5 32'
+const CAMINHO = 'M 39.83 26.89 A 8 6.45 0 1 0 32 32 A 8 6.45 0 1 1 24.17 37.11'
 
 /**
- * A marca: E. — de Easy. — num azulejo lavado com as cores da Aurora.
+ * A marca: S. — num azulejo lavado com as cores da Aurora.
  *
- * Era um S., que numa app chamada Easy. nao dizia nada a ninguem, e menos
- * ainda como atalho no ecra principal de um telemovel, ao lado do nome. O
- * desenho e' o mesmo sistema, com a letra certa.
+ * O S. e' dois bojos ELIPTICOS TANGENTES em (32,32), e nao dois arcos a olho:
+ * o de cima com centro (32, 25,55), o de baixo com centro (32, 38,45), ambos
+ * com 8 de raio horizontal e 6,45 de raio vertical. Tangentes, a curva passa
+ * o meio na horizontal e o S. nao ganha o joelho torto que arcos desenhados
+ * a olho ganham sempre.
  *
- * Tres regras, herdadas do desenho anterior e verificadas com o `getBBox` do
- * proprio browser em vez de contas de cabeca:
+ * As pontas cortam 12 graus DEPOIS do ponto mais largo de cada bojo (cada
+ * bojo varre 282 graus). Fechar mais que isso — e 305 graus ja' chegava — faz
+ * o S. ler-se como um 8 aos 40 px, que e' o tamanho a que ele trabalha.
  *
- * 1. A letra tem a MESMA altura de caixa: a tinta corre de 16 a 48, como
- *    corria antes. Duas marcas do mesmo sistema nao podem ter alturas
- *    diferentes.
+ * Tres regras do sistema, verificadas com o `getBBox` do proprio browser em
+ * vez de contas de cabeca:
+ *
+ * 1. A altura de caixa e' a do sistema: a tinta corre de 16 a 48 num quadrado
+ *    de 64. Duas marcas do mesmo sistema nao podem ter alturas diferentes.
  * 2. E' centrada nos limites do TRACO e nao do caminho: com 6,2 de espessura
- *    a tinta corre de 19,90 a 44,10 — centro exato de 64.
+ *    a tinta corre de 20,90 a 43,10 — centro exato de 64. O S. e' mais
+ *    estreito do que uma caixa quadrada pediria, que e' o que um S. e'.
  * 3. O par e' centrado PELA TINTA e nao pela caixa. O ponto e' uma fracao
  *    pequena da tinta da marca, por isso desloca o equilibrio 1,5 unidades e
  *    nao as 4 e tal que uma caixa pediria. Um ponto final pendura-se; e' o
