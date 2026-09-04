@@ -3,7 +3,7 @@
  * no upload, no fetch, no sync. The metadata index lives in the same store so
  * that a single "apagar tudo" clears both.
  */
-import { clear, createStore, del, get, set } from 'idb-keyval'
+import { clear, createStore, del, delMany, get, keys, set } from 'idb-keyval'
 import type { Doc, Fatura } from './types'
 
 const store = createStore('easy-docs', 'blobs')
@@ -104,3 +104,30 @@ export async function removeFatura(fatura: Fatura | undefined): Promise<void> {
 export async function restoreFatura(fatura: Fatura, blob: Blob): Promise<void> {
   await set(fatura.blobKey, blob, store)
 }
+
+/**
+ * Apaga os ficheiros de fatura que nenhum gasto reclama.
+ *
+ * Quem sabe que uma fatura existe e' o gasto que guarda o bilhete dela. Se um
+ * caminho largar o bilhete sem apagar o ficheiro, o ficheiro fica no disco
+ * para sempre: invisivel, sem forma de la' chegar, e a ocupar espaco a serio —
+ * uma fatura e' uma fotografia de telemovel.
+ *
+ * Foi um bot a encontra'-lo: importar um orcamento substitui a lista de gastos
+ * inteira, e com ela todos os bilhetes. Em vez de remendar so' esse caminho,
+ * isto varre pela regra — o que nao esta' reclamado nao tem dono — e serve
+ * para qualquer caminho que venha a existir.
+ *
+ * A lista de reclamadas vem de fora, e tem de vir do orcamento REAL. Chamar
+ * isto com um orcamento vazio apaga tudo, e e' por isso que quem chama tem
+ * primeiro de garantir que leu mesmo o que estava no disco.
+ */
+export async function limparFaturasOrfas(reclamadas: Set<string>): Promise<number> {
+  const todas = await keys(store)
+  const soltas = todas
+    .map(String)
+    .filter((k) => k.startsWith('fatura.') && !reclamadas.has(k))
+  if (soltas.length) await delMany(soltas, store)
+  return soltas.length
+}
+

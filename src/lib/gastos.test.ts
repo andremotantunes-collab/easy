@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { categoriaSugerida, porCategoria, porDia, serie, totais } from './gastos'
+import { categoriaSugerida, faturasReclamadas, porCategoria, porDia, serie, totais } from './gastos'
 import type { Gasto } from './types'
 
 const g = (data: string, valor: number, descricao = 'Jantar', categoria: Gasto['categoria'] = 'alimentacao'): Gasto => ({
@@ -174,5 +174,42 @@ describe('agrupar para a lista', () => {
   it('listas vazias dão listas vazias', () => {
     expect(porDia([])).toEqual([])
     expect(porCategoria([])).toEqual([])
+  })
+})
+
+/**
+ * Esta regra decide que ficheiros se APAGAM do disco. Um erro aqui nao da' um
+ * ecra torto: da' uma fatura perdida, ou um ficheiro invisivel para sempre.
+ */
+describe('as faturas que um gasto reclama', () => {
+  const comFatura = (id: string, chave?: string): Gasto => ({
+    id,
+    descricao: 'Oficina',
+    valor: 8450,
+    categoria: 'transportes',
+    data: '2026-09-04',
+    ...(chave ? { fatura: { nome: 't.png', tipo: 'image/png', tamanho: 10, blobKey: chave } } : {}),
+  })
+
+  it('reclama a chave de cada gasto que tenha fatura', () => {
+    const chaves = faturasReclamadas([comFatura('a', 'fatura.1'), comFatura('b', 'fatura.2')])
+    expect([...chaves].sort()).toEqual(['fatura.1', 'fatura.2'])
+  })
+
+  it('um gasto sem fatura não reclama nada, e não mete undefined no conjunto', () => {
+    const chaves = faturasReclamadas([comFatura('a'), comFatura('b', 'fatura.1')])
+    expect(chaves.has('fatura.1')).toBe(true)
+    expect(chaves.size).toBe(1)
+  })
+
+  it('uma lista vazia reclama o conjunto vazio — e é por isso que quem varre tem de saber o que faz', () => {
+    // Varrer com isto apaga TUDO. O `App.tsx` só chama a varredura depois de
+    // confirmar que há mesmo um orçamento no disco; este teste está aqui para
+    // que ninguém mude o retorno para «todas» a pensar que é mais seguro.
+    expect(faturasReclamadas([]).size).toBe(0)
+  })
+
+  it('dois gastos a apontar ao mesmo ficheiro contam uma vez', () => {
+    expect(faturasReclamadas([comFatura('a', 'fatura.1'), comFatura('b', 'fatura.1')]).size).toBe(1)
   })
 })

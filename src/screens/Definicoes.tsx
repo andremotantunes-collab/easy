@@ -5,7 +5,8 @@ import { MoneyInput } from '../components/MoneyInput'
 import { ObjetivoSheet } from '../components/ObjetivoSheet'
 import { useBudget } from '../store/budget'
 import { clearBudgetStorage, exportBudget, importBudget } from '../lib/storage'
-import { clearDocs } from '../lib/docs'
+import { clearDocs, limparFaturasOrfas } from '../lib/docs'
+import { faturasReclamadas } from '../lib/gastos'
 import { copy } from '../lib/copy'
 
 /** The data page: what is stored, how to take it out, how to destroy it. */
@@ -29,7 +30,12 @@ export function Definicoes() {
   const importar = async (file: File | undefined) => {
     if (!file) return
     try {
-      replace(importBudget(await file.text()))
+      const novo = importBudget(await file.text())
+      replace(novo)
+      // O orçamento que sai leva os bilhetes das faturas dele. Sem esta
+      // varredura os ficheiros ficavam no IndexedDB sem dono — e um orçamento
+      // importado nunca traz os ficheiros, porque blobs não cabem no JSON.
+      await limparFaturasOrfas(faturasReclamadas(novo.gastos))
       setMsg(copy.definicoes.importarOk)
     } catch {
       setMsg(copy.definicoes.importarErro)

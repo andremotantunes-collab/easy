@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState, type ComponentType } from 'react'
+import { Suspense, lazy, useEffect, useState, type ComponentType } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { TabBar } from './components/Layout'
 import { Inicio } from './screens/Inicio'
@@ -8,7 +8,10 @@ import { useProfile } from './store/profile'
 import { useBudget } from './store/budget'
 import { useHistorico } from './store/historico'
 import { compute } from './lib/finance'
-import { ligarSwipe, type Sentido } from './lib/swipe'
+import { limparFaturasOrfas } from './lib/docs'
+import { faturasReclamadas } from './lib/gastos'
+import { BUDGET_KEY } from './lib/storage'
+import { ligarSwipe, seccaoAtual, type Sentido } from './lib/swipe'
 
 /**
  * O Inicio e o Bloqueio vem no primeiro pacote porque sao os dois ecras que
@@ -64,6 +67,28 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /**
+   * Varre as faturas sem dono, uma vez por arranque.
+   *
+   * A guarda nao e' decoracao: com o `localStorage` inacessivel — janela
+   * privada, quota cheia — o orcamento em memoria e' o de omissao, sem gastos
+   * nenhuns, e varrer com essa lista apagava TODAS as faturas do utilizador.
+   * So' se varre depois de confirmar que ha' mesmo um orcamento no disco.
+   */
+  useEffect(() => {
+    let temDisco = false
+    try {
+      temDisco = localStorage.getItem(BUDGET_KEY) !== null
+    } catch {
+      temDisco = false
+    }
+    if (!temDisco) return
+    void limparFaturasOrfas(faturasReclamadas(useBudget.getState().budget.gastos))
+    // Só ao montar: a meio de uma sessão os caminhos que largam bilhetes já
+    // limpam atrás de si, e varrer outra vez seria correr contra eles.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Os separadores sao pedidos com o telemovel quieto, depois de o Inicio
   // estar pintado. Quem toca em Documentos ou Perfil ja' os encontra em casa.
   useEffect(() => {
@@ -83,22 +108,18 @@ export default function App() {
   /**
    * Arrastar de lado troca de separador.
    *
-   * O caminho vai numa `ref` e nao nas dependencias de proposito: reatar os
-   * ouvintes do documento a cada navegacao perdia o gesto que ja' ia a meio,
-   * porque o `touchstart` tinha sido apanhado pelo ouvinte anterior e o
-   * `touchend` cairia no novo, sem inicio nenhum guardado.
+   * Os ouvintes ligam-se uma vez e nao a cada navegacao: reata'-los a meio
+   * perdia o gesto em curso, porque o `touchstart` tinha sido apanhado pelo
+   * ouvinte anterior e o `touchend` cairia no novo, sem inicio guardado. E'
+   * tambem por isso que o gesto le' o endereco por si em vez de receber o
+   * caminho de fora.
    */
-  const caminhoRef = useRef(pathname)
-  caminhoRef.current = pathname
   useEffect(() => {
     if (bloqueado) return
-    return ligarSwipe(
-      () => caminhoRef.current,
-      (destino, dir) => {
-        setEntrada({ caminho: destino, sentido: dir })
-        navigate(destino)
-      },
-    )
+    return ligarSwipe((destino, dir) => {
+      setEntrada({ caminho: destino, sentido: dir })
+      navigate(destino)
+    })
   }, [bloqueado, navigate])
 
   // Com a app em segundo plano nao ha nada para ver: o campo de luz para, em
@@ -128,7 +149,9 @@ export default function App() {
       <div
         key={pathname}
         className={
-          entrada?.caminho === pathname
+          // A comparacao e' pela mesma regra que o gesto usa: publicada, a app
+          // vive em /easy/ e o `pathname` do router nao e' o mesmo texto.
+          entrada?.caminho === seccaoAtual()
             ? entrada.sentido === 'esquerda'
               ? 'seccao-esquerda'
               : 'seccao-direita'

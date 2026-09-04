@@ -829,6 +829,43 @@ o `#root` passaria a ser o contentor de scroll da página, e o
 depois da correção: `clip/visible`, a janela a rolar e o `#root` a não rolar.
 A mesma semente que encontrou o erro voltou a correr, e passou a zero falhas.
 
-## 40. Âmbito que ficou fora
+## 40. Duas coisas que os bots encontraram, e uma que não era bug nenhum
+
+**A fatura sem dono.** Depois de o gesto e a varredura estarem de pé, os bots
+ganharam uma invariante nova — nenhum ficheiro no IndexedDB pode ficar sem um
+gasto que o reclame — e apanharam o problema à **primeira ação**: importar um
+orçamento substitui a lista de gastos inteira, e com ela todos os bilhetes das
+faturas. Os ficheiros ficavam no disco para sempre, invisíveis, a ocupar espaço
+a sério — uma fatura é uma fotografia de telemóvel.
+
+Em vez de remendar esse caminho, a correção é uma regra: `limparFaturasOrfas`
+apaga o que ninguém reclama, e corre na importação e uma vez por arranque.
+A guarda do arranque não é decoração — com o `localStorage` inacessível (janela
+privada, quota cheia) o orçamento em memória é o de omissão, sem gastos
+nenhuns, e varrer com essa lista apagava **todas** as faturas. Só se varre
+depois de confirmar que há mesmo um orçamento no disco. A função que decide o
+que se apaga mudou-se para o `gastos.ts`, porque o `docs.ts` abre o IndexedDB
+ao ser importado e no `jsdom` dos testes não há IndexedDB — uma regra que
+apaga ficheiros tinha de ficar onde os testes lhe chegam.
+
+**E uma que não era bug.** O gesto de lado parecia morto na compilação para
+`/easy/`: não trocava de secção e o browser levava a página até `about:blank`.
+Duas hipóteses erradas depois, a sonda mostrou a verdade — 14 pedidos com 404,
+sem barra, sem CSS. A app nunca tinha carregado. O `index.html` pedia
+`/Program Files/Git/easy/assets/…`: o Git Bash do Windows converte um valor de
+ambiente que comece por `/` num caminho do Windows, e a compilação de teste
+saía com a base errada. Com `MSYS_NO_PATHCONV=1`, o gesto passa as doze
+verificações em `/easy/`, incluindo o cursor do Plano e as sub-páginas.
+
+Fica registado porque a lição não é sobre a app: **um banco de ensaio partido
+mente com a mesma convicção com que um bug real fala**, e as duas primeiras
+explicações que inventei para o sintoma eram plausíveis e falsas.
+
+O que sobreviveu dessas hipóteses foi uma simplificação que se justifica por si:
+o gesto lê a secção do próprio endereço, com a base a sair do `BASE_URL` da
+compilação, em vez de a receber de fora. Uma fonte de verdade em vez de duas, e
+os ouvintes podem ligar-se uma vez em vez de a cada navegação.
+
+## 41. Âmbito que ficou fora
 
 Nada foi cortado em silêncio. Ver a secção "O que ficou de fora" no `README.md`.

@@ -68,7 +68,7 @@ const FEITIOS = {
     // Apaga tudo o que ve', e depois desfaz metade.
     pausa: [120, 400],
     reincidencia: 0.15,
-    pesos: { apagarGasto: 6, fixas: 4, documentos: 3, gastoNovo: 2, abrirGasto: 2, tocarBarra: 2, arrastar: 2, objetivo: 2, recarregar: 2, perfil: 1 },
+    pesos: { apagarGasto: 6, fixas: 4, documentos: 3, importar: 2, gastoNovo: 2, abrirGasto: 2, tocarBarra: 2, arrastar: 2, objetivo: 2, recarregar: 2, perfil: 1 },
   },
   indeciso: {
     // Abre folhas e fecha-as sem guardar. E' o que apanha estado por limpar.
@@ -180,7 +180,36 @@ async function verificar(page, estado) {
   if (disco.gastosSemDia > 0) falhas.push({ tipo: 'gasto-sem-dia', detalhe: `${disco.gastosSemDia} gastos com data inválida` })
   if (disco.objetivoMau) falhas.push({ tipo: 'objetivo-invalido', detalhe: 'objetivo guardado sem nome ou com alvo <= 0' })
 
-  // 5. Alvos de toque. O minimo do modelo sao 44 px.
+  // 5. A base de dados nao pode ganhar ficheiros que ninguem reclama.
+  //
+  // Cada fatura e' um blob no IndexedDB com um bilhete guardado no gasto. Se
+  // um caminho qualquer largar o bilhete sem apagar o blob, o ficheiro fica
+  // la' para sempre, invisivel e a ocupar espaco — e num telemovel isso e'
+  // espaco a serio, porque uma fatura e' uma fotografia.
+  const orfaos = await page.evaluate(async () => {
+    const chaves = await new Promise((resolve) => {
+      const req = indexedDB.open('easy-docs')
+      req.onerror = () => resolve(null)
+      req.onsuccess = () => {
+        const db = req.result
+        if (!db.objectStoreNames.contains('blobs')) return resolve([])
+        const p = db.transaction('blobs', 'readonly').objectStore('blobs').getAllKeys()
+        p.onsuccess = () => resolve(p.result.map(String))
+        p.onerror = () => resolve(null)
+      }
+    })
+    if (chaves === null) return null
+    let orcamento = {}
+    try { orcamento = JSON.parse(localStorage.getItem('easy.budget.v1') ?? '{}').budget ?? {} } catch { /* vazio */ }
+    const reclamadas = new Set((orcamento.gastos ?? []).map((g) => g.fatura?.blobKey).filter(Boolean))
+    const soltas = chaves.filter((k) => k.startsWith('fatura.') && !reclamadas.has(k))
+    return { soltas: soltas.length, exemplo: soltas[0] ?? null }
+  }).catch(() => null)
+  if (orfaos && orfaos.soltas > 0) {
+    falhas.push({ tipo: 'fatura-orfa', detalhe: `${orfaos.soltas} ficheiros sem dono no IndexedDB (ex.: ${orfaos.exemplo})` })
+  }
+
+  // 6. Alvos de toque. O minimo do modelo sao 44 px.
   const pequenos = await page.evaluate(() => {
     const visivel = (e) => {
       const r = e.getBoundingClientRect()
@@ -200,7 +229,7 @@ async function verificar(page, estado) {
   })
   for (const p of pequenos) falhas.push({ tipo: 'alvo-pequeno', detalhe: p })
 
-  // 6. Erros de consola e promessas por apanhar, recolhidos pelos ouvintes.
+  // 7. Erros de consola e promessas por apanhar, recolhidos pelos ouvintes.
   for (const e of estado.erros.splice(0)) falhas.push({ tipo: 'erro-de-js', detalhe: e })
   for (const r of estado.rede.splice(0)) falhas.push({ tipo: 'pedido-de-rede', detalhe: r })
 
@@ -450,6 +479,27 @@ function acoes(page, cdp, rnd) {
       return 'abre uma folha e fecha-a sem guardar'
     },
 
+    async importar() {
+      // Substituir o orcamento inteiro larga os bilhetes de todas as faturas
+      // que la' estavam. E' o caminho onde um ficheiro fica sem dono.
+      await fecharFolha()
+      await page.goto(`${BASE}/definicoes`, { waitUntil: 'domcontentloaded' }).catch(() => {})
+      await esperar(400)
+      const input = page.locator('input[type="file"]').first()
+      if (!(await input.count())) return 'sem importação disponível'
+      await input.setInputFiles({
+        name: 'orcamento.json', mimeType: 'application/json',
+        buffer: Buffer.from(JSON.stringify({ version: 4, budget: {
+          rendimentoMensal: 180000, extras: 0, modoDespesas: 'percentagem', despesasPercentagem: 50,
+          despesasFixas: [], gastos: [], limites: {},
+          alocacao: { investimentos: 10, poupanca: 10 },
+          poupancaAcumulada: 0, taxaAnualEsperada: 5, modoDiscreto: false, objetivo: null,
+        } })),
+      }).catch(() => {})
+      await esperar(600)
+      return 'importa um orçamento por cima do que lá estava'
+    },
+
     async tema() {
       await page.evaluate(() => {
         const t = document.documentElement.getAttribute('data-theme')
@@ -501,9 +551,50 @@ async function correrBot(browser, nomeFeitio, semente, relatorio) {
 
   const cdp = await contexto.newCDPSession(page)
   await page.goto(BASE, { waitUntil: 'domcontentloaded' })
-  await page.evaluate(() => localStorage.setItem('easy.onboarded.v1', '1'))
+  // Uma app ja' vivida, e nao uma acabada de instalar: com o perfil vazio,
+  // metade das acoes era «sem gastos para apagar» e os caminhos fundos —
+  // apagar, desfazer, editar — nunca chegavam a correr.
+  await page.evaluate((mes) => {
+    localStorage.setItem('easy.onboarded.v1', '1')
+    localStorage.setItem('easy.budget.v1', JSON.stringify({ version: 4, budget: {
+      rendimentoMensal: 240000, extras: 15000, modoDespesas: 'lista', despesasPercentagem: 45,
+      despesasFixas: [
+        { id: 'f1', nome: 'Renda', valor: 75000, categoria: 'casa', periodicidade: 'mensal', ativo: true },
+        { id: 'f2', nome: 'Carro', valor: 18000, categoria: 'transportes', periodicidade: 'mensal', ativo: true },
+        { id: 'f3', nome: 'IUC', valor: 24000, categoria: 'transportes', periodicidade: 'anual', ativo: true },
+        { id: 'f4', nome: 'Ginásio', valor: 4000, categoria: 'saude', periodicidade: 'mensal', ativo: false },
+      ],
+      gastos: Array.from({ length: 14 }, (_, i) => ({
+        id: `g${i}`, descricao: ['Jantar', 'Gasolina', 'Farmácia', 'Café'][i % 4],
+        valor: [1990, 6000, 1250, 90][i % 4],
+        categoria: ['alimentacao', 'transportes', 'saude', 'alimentacao'][i % 4],
+        data: `${mes}-${String((i % 27) + 1).padStart(2, '0')}`,
+      })),
+      limites: { alimentacao: 20000, transportes: 15000 },
+      alocacao: { investimentos: 10, poupanca: 10 },
+      poupancaAcumulada: 620000, taxaAnualEsperada: 5, modoDiscreto: false,
+      objetivo: { nome: 'Carro', alvo: 1400000, criadoEm: '2026-01-02T00:00:00.000Z' },
+    } }))
+  }, new Date().toISOString().slice(0, 7))
   await page.goto(BASE, { waitUntil: 'networkidle' })
   await page.waitForTimeout(800)
+
+  // Uma fatura de verdade no IndexedDB, para o caminho dos blobs contar.
+  await page.goto(`${BASE}/gastos`, { waitUntil: 'networkidle' }).catch(() => {})
+  await page.waitForTimeout(500)
+  const primeira = page.locator('section ul li button').first()
+  if (await primeira.count().catch(() => 0)) {
+    await primeira.click().catch(() => {})
+    await page.waitForTimeout(400)
+    await page.locator('input[type="file"]').last().setInputFiles({
+      name: 'talao.png', mimeType: 'image/png', buffer: Buffer.from('bot-talao'),
+    }).catch(() => {})
+    await page.waitForTimeout(500)
+    await page.keyboard.press('Escape').catch(() => {})
+    await page.waitForTimeout(300)
+  }
+  await page.goto(BASE, { waitUntil: 'networkidle' }).catch(() => {})
+  await page.waitForTimeout(400)
 
   const reportorio = acoes(page, cdp, rnd)
   const nomes = Object.keys(feitio.pesos)

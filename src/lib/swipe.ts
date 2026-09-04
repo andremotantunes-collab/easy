@@ -20,6 +20,29 @@
 /** Os quatro separadores, pela ordem em que estao na barra. */
 export const SECCOES = ['/', '/gastos', '/documentos', '/perfil'] as const
 
+/**
+ * Em que seccao estamos, lido do proprio endereco.
+ *
+ * Publicada, a app vive em `/easy/` e nao na raiz, e havia aqui duas fontes de
+ * verdade sobre onde estamos: o `pathname` do router, e esta lista de caminhos.
+ * O router faz a coisa certa — foi verificado contra a build de `/easy/`, e o
+ * gesto funcionava dos dois lados — mas fazia-a noutro sitio, e uma regra
+ * partida ao meio e' uma regra a` espera de se desencontrar.
+ *
+ * Lido daqui, a base sai do `BASE_URL` da propria compilacao, ha' uma so'
+ * regra, e os ouvintes podem ligar-se UMA vez em vez de a cada navegacao — que
+ * era o que perdia o gesto em curso quando o `touchstart` ficava com um
+ * ouvinte e o `touchend` caia no seguinte.
+ */
+export function seccaoAtual(): string {
+  const base = import.meta.env.BASE_URL.replace(/\/+$/, '')
+  let caminho = window.location.pathname
+  if (base && caminho.startsWith(base)) caminho = caminho.slice(base.length)
+  if (!caminho.startsWith('/')) caminho = `/${caminho}`
+  // '/gastos/' e '/gastos' sao o mesmo sitio; '/' fica '/'.
+  return caminho.length > 1 ? caminho.replace(/\/+$/, '') : '/'
+}
+
 /** Distancia minima, em pixeis, para um arrasto contar como gesto. */
 const DISTANCIA_MINIMA = 64
 
@@ -67,11 +90,9 @@ export type Sentido = 'esquerda' | 'direita'
  *
  * `aoMudar` recebe o caminho de destino e o sentido em que a seccao nova
  * entra, para a animacao poder ir ao encontro do dedo em vez de contra ele.
+ * O caminho de destino e' relativo a` app: quem navega e' que lhe poe a base.
  */
-export function ligarSwipe(
-  caminhoAtual: () => string,
-  aoMudar: (destino: string, sentido: Sentido) => void,
-): () => void {
+export function ligarSwipe(aoMudar: (destino: string, sentido: Sentido) => void): () => void {
   let x0 = 0
   let y0 = 0
   let t0 = 0
@@ -98,7 +119,7 @@ export function ligarSwipe(
     if (Math.abs(dx) < DISTANCIA_MINIMA) return
     if (Math.abs(dx) < Math.abs(dy) * RAZAO_HORIZONTAL) return
 
-    const i = (SECCOES as readonly string[]).indexOf(caminhoAtual())
+    const i = (SECCOES as readonly string[]).indexOf(seccaoAtual())
     // Fora dos quatro separadores nao ha' vizinhos: uma sub-pagina como o
     // Plano ou as Fixas nao pertence a` fila e nao se troca por arrasto.
     if (i === -1) return

@@ -248,3 +248,15 @@ export function totais(gastos: Gasto[], hoje = new Date()): Totais {
     tudo: soma(gastos),
   }
 }
+
+/**
+ * As chaves de ficheiro que uma lista de gastos reclama.
+ *
+ * Vive aqui e nao no `docs.ts` por uma razao pratica: o `docs.ts` abre o
+ * IndexedDB assim que e' importado, e no `jsdom` dos testes nao ha' IndexedDB
+ * nenhum. Uma regra desta importancia — e' ela que decide que ficheiros se
+ * apagam — tinha de ficar num sitio onde os testes lhe chegassem.
+ */
+export function faturasReclamadas(gastos: Gasto[]): Set<string> {
+  return new Set(gastos.map((g) => g.fatura?.blobKey).filter((k): k is string => !!k))
+}
