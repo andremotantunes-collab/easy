@@ -1,17 +1,16 @@
-const CAMINHO = 'M 39.83 26.89 A 8 6.45 0 1 0 32 32 A 8 6.45 0 1 1 24.17 37.11'
+const CAMINHO = 'M 23 19.1 L 41 19.1 L 23 44.9 L 41 44.9'
 
 /**
- * A marca: S. — num azulejo lavado com as cores da Aurora.
+ * A marca: Z. — o z de Easy. — num azulejo lavado com as cores da Aurora.
  *
- * O S. e' dois bojos ELIPTICOS TANGENTES em (32,32), e nao dois arcos a olho:
- * o de cima com centro (32, 25,55), o de baixo com centro (32, 38,45), ambos
- * com 8 de raio horizontal e 6,45 de raio vertical. Tangentes, a curva passa
- * o meio na horizontal e o S. nao ganha o joelho torto que arcos desenhados
- * a olho ganham sempre.
+ * Tres tracos e nada mais: a barra de cima, a diagonal, a barra de baixo. Um
+ * Z. desenha-se com o que ja' la' estava — o mesmo caminho do E. com os pontos
+ * por outra ordem — e por isso cai exatamente na mesma caixa de tinta que a
+ * marca teve desde o principio.
  *
- * As pontas cortam 12 graus DEPOIS do ponto mais largo de cada bojo (cada
- * bojo varre 282 graus). Fechar mais que isso — e 305 graus ja' chegava — faz
- * o S. ler-se como um 8 aos 40 px, que e' o tamanho a que ele trabalha.
+ * As juntas sao redondas como os extremos. Numa letra de tres tracos a junta
+ * e' metade do que se ve': em bico, a diagonal a encontrar a barra fazia duas
+ * farpas que aos 40 px se liam como sujidade.
  *
  * Tres regras do sistema, verificadas com o `getBBox` do proprio browser em
  * vez de contas de cabeca:
@@ -19,8 +18,7 @@ const CAMINHO = 'M 39.83 26.89 A 8 6.45 0 1 0 32 32 A 8 6.45 0 1 1 24.17 37.11'
  * 1. A altura de caixa e' a do sistema: a tinta corre de 16 a 48 num quadrado
  *    de 64. Duas marcas do mesmo sistema nao podem ter alturas diferentes.
  * 2. E' centrada nos limites do TRACO e nao do caminho: com 6,2 de espessura
- *    a tinta corre de 20,90 a 43,10 — centro exato de 64. O S. e' mais
- *    estreito do que uma caixa quadrada pediria, que e' o que um S. e'.
+ *    a tinta corre de 19,90 a 44,10 — centro exato de 64.
  * 3. O par e' centrado PELA TINTA e nao pela caixa. O ponto e' uma fracao
  *    pequena da tinta da marca, por isso desloca o equilibrio 1,5 unidades e
  *    nao as 4 e tal que uma caixa pediria. Um ponto final pendura-se; e' o

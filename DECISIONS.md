@@ -751,6 +751,84 @@ outra *feature*, e a escrever por cima de um saldo que o utilizador escreveu à
 mão. O objetivo funciona nos dois regimes — lê o pote, seja quem for a
 enchê-lo. Fica por decidir, não por esquecimento.
 
-## 37. Âmbito que ficou fora
+## 37. A marca é um Z.
+
+Terceira letra, e a última — pedido do dono da marca: o **z** de Easy., mas Z.
+Três traços e nada mais: a barra de cima, a diagonal, a barra de baixo. Um Z.
+desenha-se com o que já lá estava — é o mesmo caminho do E. com os pontos por
+outra ordem — e por isso cai exatamente na mesma caixa de tinta que a marca tem
+desde o princípio: de 19,90 a 44,10 na horizontal, de 16 a 48 na vertical.
+
+As juntas são redondas como os extremos. Numa letra de três traços a junta é
+metade do que se vê: em bico, a diagonal a encontrar a barra fazia duas farpas
+que aos 40 px — o tamanho a que o atalho trabalha — se liam como sujidade.
+
+Foram desenhadas quatro larguras e escolhida a que mantém a caixa do sistema.
+As mais estreitas fechavam a diagonal contra as barras; a de barras curtas
+deitava-se e parecia um erro de desenho.
+
+## 38. Arrastar de lado é da app, não do browser
+
+Num telemóvel, um arrasto horizontal era do *browser*: voltava atrás no
+histórico, ou avançava. Numa app de quatro separadores isso é quase sempre o
+contrário do que se queria — quem arrasta quer o separador do lado, não a
+página onde esteve há três toques.
+
+A direção segue o que todos os telemóveis fazem, e não há aqui invenção
+nenhuma: o dedo empurra o conteúdo e o conteúdo vai para onde o dedo o levar.
+Da direita para a esquerda entra a secção da direita; ao contrário, a da
+esquerda. A secção nova entra pelo lado de onde veio, em 220 ms.
+
+**As exceções são o trabalho todo.** Um gesto destes, mal apanhado, rouba o
+arrasto a quem estava a fazer outra coisa. Não dispara: com uma folha aberta
+(`role="dialog"`), sobre um `input` — em especial os cursores do Plano e do
+Investir —, na linha das despesas fixas (que se arrasta para apagar, e ganhou um
+`data-sem-swipe`), dentro de qualquer caixa que já role de lado (detetada pela
+medida, e não por uma lista de classes que envelhece), com dois dedos no ecrã,
+ou numa sub-página como o Plano, que não pertence à fila dos quatro. E tem de
+ser claramente horizontal: 64 px de distância e 1,6× mais horizontal do que
+vertical.
+
+O caminho atual vai numa `ref` e não nas dependências do efeito: reatar os
+ouvintes a cada navegação perdia o gesto que ia a meio, porque o `touchstart`
+tinha sido apanhado pelo ouvinte anterior e o `touchend` cairia no novo, sem
+início nenhum guardado.
+
+## 39. Bots com feitio, e o bug que eles encontraram no minuto seguinte
+
+Os testes do `vitest` provam o que já sabemos perguntar. Faltava o resto: a
+ordem de toques que ninguém escreveria de propósito. `npm run bots` solta bots
+com feitios diferentes — apressado, cuidadoso, destrutivo, indeciso, polegar —
+a usar a app com **toques e arrastos verdadeiros** do protocolo do Chromium. O
+`page.click` do Playwright é um rato: não dispara `touchstart` nenhum, e era
+exatamente o gesto novo que ficava por testar.
+
+Depois de cada ação verificam-se todas as invariantes, e cada corrida tem uma
+semente que a repete toque a toque — um erro encontrado por acaso passa a ser
+um erro reproduzível.
+
+**Antes de os soltar, os detetores foram atacados de propósito**, para provar
+que conseguem falhar: injetou-se um `NaN` no ecrã, um elemento largo, um botão
+de 20 px e um `#root` vazio. Três dos quatro apanharam. O do transbordo não —
+e a razão era boa: sob emulação móvel, quando o conteúdo transborda o browser
+**afasta-se para o fazer caber**, e o `window.innerWidth` cresce com ele.
+Comparar um com o outro dava sempre igual: o defeito escondia-se atrás do
+próprio sintoma. A medida passou a ser contra uma largura fixa.
+
+**E então os bots encontraram um bug meu, 79 vezes na mesma corrida.** A
+animação de deslize da decisão 38 desloca a secção 26 px de lado, e durante os
+220 ms esses 26 px eram scroll horizontal a sério: o documento passava de 390
+para 416 px, o browser afastava-se, e a barra de baixo — que é `inset-x-0` —
+esticava com ele. As larguras no relatório iam de 402 a 417: os fotogramas da
+própria animação.
+
+A correção é `overflow-x: clip` no `#root`. **`clip` e não `hidden`:**
+`overflow-x: hidden` com `overflow-y: visible` obriga o eixo vertical a `auto`,
+o `#root` passaria a ser o contentor de scroll da página, e o
+`window.scrollTo(0, 0)` de cada navegação deixava de ter efeito. Confirmado
+depois da correção: `clip/visible`, a janela a rolar e o `#root` a não rolar.
+A mesma semente que encontrou o erro voltou a correr, e passou a zero falhas.
+
+## 40. Âmbito que ficou fora
 
 Nada foi cortado em silêncio. Ver a secção "O que ficou de fora" no `README.md`.

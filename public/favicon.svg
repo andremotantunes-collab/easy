@@ -12,7 +12,7 @@
   </defs>
   <rect width="64" height="64" rx="18" fill="url(#chao)"/>
   <g transform="translate(-1.5 0)">
-    <path d="M 39.83 26.89 A 8 6.45 0 1 0 32 32 A 8 6.45 0 1 1 24.17 37.11"
+    <path d="M 23 19.1 L 41 19.1 L 23 44.9 L 41 44.9"
           fill="none" stroke="url(#letra)" stroke-width="6.2"
           stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="50" cy="47.8" r="3.3" fill="url(#letra)"/>

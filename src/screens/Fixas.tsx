@@ -39,7 +39,10 @@ function SwipeRow({
       <div className="absolute inset-y-0 right-0 flex w-24 items-center justify-center bg-[var(--negative)]">
         <Trash2 size={18} strokeWidth={1.8} color="#FFFFFF" aria-hidden />
       </div>
+      {/* Esta linha arrasta-se para apagar, e por isso o arrasto e' dela: sem a
+          marca, o mesmo gesto trocava de separador a meio do apagar. */}
       <div
+        data-sem-swipe
         className="relative flex min-h-[56px] items-center gap-3 bg-[var(--bg)] py-2"
         style={{ transform: `translateX(${-dx}px)`, transition: dragging.current ? 'none' : 'transform 150ms ease-out' }}
         onPointerDown={(e) => {

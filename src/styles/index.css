@@ -103,6 +103,42 @@
 }
 .entra { animation: entrar 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 
+/* A seccao que entra por arrasto vem do lado para onde o dedo foi: o dedo
+   empurra e o conteudo segue. 220 ms — o suficiente para se ver de onde veio,
+   curto o suficiente para nao se esperar por ele quatro vezes seguidas. */
+@keyframes seccao-da-direita {
+  from { opacity: 0; transform: translateX(26px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes seccao-da-esquerda {
+  from { opacity: 0; transform: translateX(-26px); }
+  to   { opacity: 1; transform: none; }
+}
+.seccao-esquerda { animation: seccao-da-direita 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.seccao-direita  { animation: seccao-da-esquerda 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* A seccao que entra vem deslocada 26 px de lado, e durante os 220 ms da
+   animacao esses 26 px eram scroll horizontal a serio: o documento passava de
+   390 para 416 px, o browser afastava-se para o fazer caber, e a barra de baixo
+   — que e' `inset-x-0` — esticava com ele. Foi o que os bots apanharam, 79
+   vezes, com larguras entre 402 e 417: os fotogramas da propria animacao.
+
+   `clip` e nao `hidden`: `overflow-x: hidden` com `overflow-y: visible` obriga
+   o eixo vertical a `auto`, o #root passaria a ser o contentor de scroll da
+   pagina, e o `window.scrollTo(0, 0)` de cada navegacao deixava de ter efeito.
+   O `clip` corta sem criar contentor nenhum, que e' exatamente para isto que
+   ele existe. */
+#root {
+  overflow-x: clip;
+}
+
+/* O arrasto de lado e' da app e nao do browser: sem isto, o mesmo gesto que
+   troca de seccao tambem faz o Chrome voltar atras no historico, e as duas
+   coisas acontecem ao mesmo tempo. */
+html, body {
+  overscroll-behavior-x: none;
+}
+
 /* O campo de luz da Aurora: dois gradientes radiais com ciclos de 12 e 14 s,
    fixos por tras do conteudo. Sao dois e nao quatro, e o desfoque e' 34 px e
    nao 70, porque isto corre num telemovel e o cursor do Plano tem de continuar

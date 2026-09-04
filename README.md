@@ -32,6 +32,7 @@ Outros comandos:
 | `npm run shots -- 9` | Captura os ecrãs nos dois temas e monta a folha de contacto; acrescenta `max` no fim para o iPhone 13 Pro Max |
 | `npm run deploy` | Envia para o GitHub, que corre os testes e publica |
 | `npm run verify` | Verificação automática a 390×844 **e** 430×932: rede, scroll horizontal, alvos de toque, campos ≥ 16 px |
+| `npm run bots` | Solta bots humanizados na app e reporta o que partirem |
 | `npm run offline` | Escreve `Easy.html`: a app inteira num ficheiro, para levar para o telemóvel |
 
 ## No telemóvel
@@ -97,15 +98,18 @@ runtime, não usa contas nem analytics.
 isso há **Exportar orçamento (JSON)** em Perfil › Os teus dados e **Exportar
 tudo (ZIP)** em Documentos.
 
-## Três separadores
+## Quatro separadores
 
-A app tem três destinos, e só três:
+A app tem quatro destinos, e só quatro:
 
 | Separador | O que faz |
 |---|---|
-| **Início** (`/`) | O mês, e os meses anteriores. Fita de meses no topo, o bolo em grande, o donut com as quatro fatias e três métricas. Só mostra: não diz o que gastar, nem quanto por dia |
+| **Início** (`/`) | O mês, e os meses anteriores. Fita de meses no topo, o bolo em grande, o donut com as fatias e duas métricas. Só mostra: não diz o que gastar |
+| **Gastos** (`/gastos`) | O que se gastou dia a dia: registar, ver por categoria, limites, o gráfico do ritmo, e a fatura de cada gasto |
 | **Documentos** (`/documentos`) | Uma lista, sem filtros nem categorias: contratos, recibos, seguros e impostos, guardados só neste telemóvel |
 | **Perfil** (`/perfil`) | O teu perfil — foto, nome e resumo do mês — e tudo o que se ajusta, em lista |
+
+Arrastar de lado troca de separador — ver **Andar pela app**.
 
 O que se ajusta abre a partir do Perfil, com seta de voltar no header:
 
@@ -177,6 +181,26 @@ janelas: 7 dias, 30 dias, 12 meses, anos e tudo. Um dia sem gastos é um ponto a
 zero e não um ponto que falta — sem isso a linha ligava dias que não se seguem
 e mentia sobre o ritmo. A tracejado fica a média do período.
 
+## Andar pela app
+
+A barra de baixo tem quatro separadores. **Arrastar de lado troca de
+separador**, na direção em que todos os telemóveis o fazem: o dedo empurra o
+conteúdo e o conteúdo segue-o. Da direita para a esquerda traz a secção da
+direita; da esquerda para a direita traz a da esquerda. A secção nova entra
+pelo lado de onde vem, em 220 ms.
+
+Isto substitui o arrasto do *browser*, que numa app de quatro separadores
+quase sempre fazia o contrário do que se queria — voltava atrás no histórico em
+vez de ir para o lado.
+
+O gesto tem exceções, e são elas o trabalho todo: não dispara com uma folha
+aberta, nem em cima de um cursor do Plano ou do Investir, nem na linha das
+despesas fixas (que se arrasta para apagar), nem dentro de uma caixa que já
+role de lado, nem numa sub-página como o Plano ou as Fixas — que não pertencem
+à fila dos quatro. E precisa de ser claramente horizontal: 64 px de distância e
+1,6× mais horizontal do que vertical, para não roubar o arrasto a quem só está
+a percorrer a página.
+
 ## O objetivo
 
 Há **um** objetivo de poupança, opcional, e **escondido à vista**. Não aparece
@@ -244,6 +268,31 @@ que é cobrado (`240,00 €/ano`) e, por baixo, pelo que custa por mês
 os valores em euros por `••••`. O donut, as percentagens e os nomes ficam à
 vista: esconde valores, nunca estrutura. Os campos que estás a editar continuam
 legíveis, senão não dava para escrever neles.
+
+## Os bots
+
+`npm run bots` solta bots com feitios diferentes a usar a app a sério, com
+toques e arrastos verdadeiros do protocolo do Chromium — não cliques de rato,
+que não disparam `touchstart` nenhum e deixariam o gesto de lado por testar.
+
+| Feitio | O que faz |
+|---|---|
+| **apressado** | Toca depressa, não espera pelas animações, repete-se |
+| **cuidadoso** | Espera, lê, confirma |
+| **destrutivo** | Apaga tudo o que vê, e desfaz metade |
+| **indeciso** | Abre folhas e fecha-as sem guardar — é o que apanha estado por limpar |
+| **polegar** | Só arrasta, para martelar o gesto de lado |
+
+Depois de **cada** ação verificam-se todas as invariantes: ecrã em branco,
+valores por formatar (`NaN`, `undefined`, `[object Object]`), transbordo
+horizontal a 390 px, o orçamento no disco a continuar a ser um orçamento, alvos
+de toque abaixo de 44 px, erros de consola, e qualquer pedido de rede — que tem
+de ser zero.
+
+Cada corrida tem uma **semente**, impressa no cabeçalho. `--semente N` repete-a
+toque a toque, e é assim que um erro encontrado por acaso passa a ser um erro
+reproduzível. Quando uma invariante cai, o relatório traz o rasto das últimas
+ações que lá chegaram.
 
 ## O que ficou de fora
 

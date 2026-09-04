@@ -14,10 +14,10 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = join(root, 'public', 'icons')
 mkdirSync(OUT, { recursive: true })
 
-// Same drawing as the favicon and the in-app mark, scaled by 8: o S. da marca,
-// dois bojos elipticos tangentes no centro. A letra e' centrada nos limites do
-// traco e nao do caminho, e o par e' equilibrado pela tinta, para sobreviver ao
-// corte circular de um icone maskable sem parecer torto.
+// Same drawing as the favicon and the in-app mark, scaled by 8: o Z. da marca,
+// tres tracos com juntas redondas. A letra e' centrada nos limites do traco e
+// nao do caminho, e o par e' equilibrado pela tinta, para sobreviver ao corte
+// circular de um icone maskable sem parecer torto.
 const svg = (size) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
   <defs>
@@ -38,7 +38,7 @@ const svg = (size) => `
   <rect width="512" height="512" fill="url(#chao)"/>
   <rect width="512" height="512" fill="url(#luz)"/>
   <g transform="translate(-12 0)">
-    <path d="M 318.64 215.12 A 64 51.6 0 1 0 256 256 A 64 51.6 0 1 1 193.36 296.88"
+    <path d="M 184 152.8 L 328 152.8 L 184 359.2 L 328 359.2"
           fill="none" stroke="url(#letra)" stroke-width="49.6"
           stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="400" cy="382.4" r="26.4" fill="url(#letra)"/>

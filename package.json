@@ -18,7 +18,8 @@
     "icons": "node scripts/gen-icons.mjs",
     "shots": "node scripts/screenshots.mjs",
     "verify": "node scripts/verify.mjs",
-    "sequence": "node scripts/slider-sequence.mjs"
+    "sequence": "node scripts/slider-sequence.mjs",
+    "bots": "node scripts/bots.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

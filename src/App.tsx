@@ -1,5 +1,5 @@
-import { Suspense, lazy, useEffect, type ComponentType } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Suspense, lazy, useEffect, useRef, useState, type ComponentType } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { TabBar } from './components/Layout'
 import { Inicio } from './screens/Inicio'
 import { Bloqueio } from './screens/Bloqueio'
@@ -8,6 +8,7 @@ import { useProfile } from './store/profile'
 import { useBudget } from './store/budget'
 import { useHistorico } from './store/historico'
 import { compute } from './lib/finance'
+import { ligarSwipe, type Sentido } from './lib/swipe'
 
 /**
  * O Inicio e o Bloqueio vem no primeiro pacote porque sao os dois ecras que
@@ -39,7 +40,13 @@ const FULLSCREEN = ['/inicio']
 
 export default function App() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const bloqueado = useProfile((s) => s.bloqueado)
+  // Guarda o caminho A QUE a animacao pertence, e nao so' o sentido: assim um
+  // toque na barra — que muda de seccao sem sentido nenhum — nao herda a
+  // animacao do arrasto anterior, e nao e' preciso um efeito a limpa'-la (que
+  // a apagava a meio, por correr logo a seguir a` navegacao).
+  const [entrada, setEntrada] = useState<{ caminho: string; sentido: Sentido } | null>(null)
   const budget = useBudget((s) => s.budget)
   const abrirMes = useHistorico((s) => s.abrir)
   const chromeless = FULLSCREEN.includes(pathname)
@@ -73,6 +80,27 @@ export default function App() {
     return () => clearTimeout(id)
   }, [])
 
+  /**
+   * Arrastar de lado troca de separador.
+   *
+   * O caminho vai numa `ref` e nao nas dependencias de proposito: reatar os
+   * ouvintes do documento a cada navegacao perdia o gesto que ja' ia a meio,
+   * porque o `touchstart` tinha sido apanhado pelo ouvinte anterior e o
+   * `touchend` cairia no novo, sem inicio nenhum guardado.
+   */
+  const caminhoRef = useRef(pathname)
+  caminhoRef.current = pathname
+  useEffect(() => {
+    if (bloqueado) return
+    return ligarSwipe(
+      () => caminhoRef.current,
+      (destino, dir) => {
+        setEntrada({ caminho: destino, sentido: dir })
+        navigate(destino)
+      },
+    )
+  }, [bloqueado, navigate])
+
   // Com a app em segundo plano nao ha nada para ver: o campo de luz para, em
   // vez de continuar a compor camadas contra a bateria.
   useEffect(() => {
@@ -95,6 +123,18 @@ export default function App() {
       {/* Sem indicador de espera de proposito: os pacotes sao pequenos e ja'
           vem pedidos de antemao, e um pisca-pisca a cada toque seria pior do
           que o frame que ele tapa. */}
+      {/* A chave e' o caminho para a animacao voltar a correr a cada troca —
+          uma classe que ja' la' esta' nao reinicia sozinha. */}
+      <div
+        key={pathname}
+        className={
+          entrada?.caminho === pathname
+            ? entrada.sentido === 'esquerda'
+              ? 'seccao-esquerda'
+              : 'seccao-direita'
+            : undefined
+        }
+      >
       <Suspense fallback={null}>
         <Routes>
           <Route
@@ -119,6 +159,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      </div>
       {chromeless ? null : <TabBar />}
     </>
   )
