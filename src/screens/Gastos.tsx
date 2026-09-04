@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Trash2 } from 'lucide-react'
+import { Download, Paperclip, Plus, Trash2, X } from 'lucide-react'
 import { Screen } from '../components/Layout'
 import { Grafico } from '../components/Grafico'
 import { Bar, Card, GhostButton, Label, PrimaryButton, Sheet, UndoToast } from '../components/ui'
@@ -18,11 +18,17 @@ import {
   totais,
 } from '../lib/gastos'
 import type { Periodo } from '../lib/gastos'
-import { diaDe, diaPorExtenso, mesDe, nomeDoMes } from '../lib/format'
+import { diaDe, diaPorExtenso, formatBytes, formatDate, mesDe, nomeDoMes } from '../lib/format'
+import { getFaturaBlob, removeFatura, restoreFatura, saveFatura } from '../lib/docs'
+import { saveBlob } from '../lib/download'
 import { useEUR } from '../lib/money'
 import { copy } from '../lib/copy'
 import { SLICE_COLOR, SLICE_COLOR_2 } from '../lib/slices'
-import type { Gasto, GastoCategoria } from '../lib/types'
+import type { Fatura, Gasto, GastoCategoria } from '../lib/types'
+
+/** Uma fatura e' uma fotografia do talao ou um PDF. Nao ha' razao para abrir a
+ *  galeria toda e o disco todo a alguem que quer anexar um papel. */
+const TIPOS_FATURA = 'image/*,application/pdf'
 
 /**
  * Os gastos do mês: o que está prometido às despesas fixas, e o que se foi
@@ -35,6 +41,7 @@ import type { Gasto, GastoCategoria } from '../lib/types'
 export function Gastos() {
   const budget = useBudget((s) => s.budget)
   const addGasto = useBudget((s) => s.addGasto)
+  const updateGasto = useBudget((s) => s.updateGasto)
   const removeGasto = useBudget((s) => s.removeGasto)
   const restoreGasto = useBudget((s) => s.restoreGasto)
   const setLimite = useBudget((s) => s.setLimite)
@@ -52,9 +59,29 @@ export function Gastos() {
   const [categoria, setCategoria] = useState<GastoCategoria>('outros')
   const [categoriaTocada, setCategoriaTocada] = useState(false)
   const [dia, setDia] = useState(() => diaDe(new Date()))
-  const [undo, setUndo] = useState<{ gasto: Gasto; index: number } | null>(null)
+  const [undo, setUndo] = useState<{ gasto: Gasto; index: number; fatura: Blob | null } | null>(
+    null,
+  )
   const [limiteDe, setLimiteDe] = useState<GastoCategoria | null>(null)
   const [limiteValor, setLimiteValor] = useState(0)
+
+  // A fatura do gasto que ainda nao existe. Fica em memoria e so' vai ao disco
+  // no `guardar`: abrir a folha, escolher um ficheiro e desistir nao pode
+  // deixar um blob orfao no IndexedDB para sempre.
+  const [novaFatura, setNovaFatura] = useState<File | null>(null)
+  const inputNova = useRef<HTMLInputElement>(null)
+
+  // A apresentacao de um gasto que ja' existe. Guarda-se o ID e nao o objeto:
+  // anexar uma fatura reescreve o gasto, e uma copia tirada na abertura
+  // ficaria a mostrar o estado de antes.
+  const [detalheId, setDetalheId] = useState<string | null>(null)
+  const inputDetalhe = useRef<HTMLInputElement>(null)
+  const [aAnexar, setAAnexar] = useState(false)
+  // Ambos guardam a CHAVE do ficheiro a que dizem respeito, e nao so' o
+  // conteudo: assim o que se mostra deriva-se durante o render em vez de ser
+  // limpo num efeito, e trocar de fatura nunca mostra a anterior por um frame.
+  const [vista, setVista] = useState<{ chave: string; url: string; blob: Blob } | null>(null)
+  const [emFalta, setEmFalta] = useState<string | null>(null)
 
   const doMes = useMemo(() => gastosDoMes(budget.gastos, mes), [budget.gastos, mes])
   const dias = useMemo(() => porDia(doMes), [doMes])
@@ -68,14 +95,89 @@ export function Gastos() {
 
   const semRendimento = b.rendimentoTotal <= 0
 
-  const guardar = () => {
+  const detalhe = useMemo(
+    () => budget.gastos.find((g) => g.id === detalheId) ?? null,
+    [budget.gastos, detalheId],
+  )
+
+  /**
+   * Le' o ficheiro da fatura aberta e faz-lhe um URL.
+   *
+   * O URL e' revogado na limpeza porque cada `createObjectURL` prende o blob
+   * em memoria ate' alguem o soltar, e um ecra de gastos abre e fecha faturas
+   * dezenas de vezes. O `vivo` existe porque a leitura e' assincrona: fechar a
+   * folha antes de ela responder deixaria um URL a ser criado depois da
+   * limpeza — e esse ninguem o revogava.
+   */
+  const chave = detalhe?.fatura?.blobKey ?? null
+  useEffect(() => {
+    const fatura = detalhe?.fatura
+    if (!fatura) return
+    let vivo = true
+    let url: string | null = null
+    void getFaturaBlob(fatura).then((blob) => {
+      if (!vivo) return
+      if (!blob) {
+        setEmFalta(fatura.blobKey)
+        return
+      }
+      url = URL.createObjectURL(blob)
+      setVista({ chave: fatura.blobKey, url, blob })
+    })
+    return () => {
+      vivo = false
+      if (url) URL.revokeObjectURL(url)
+    }
+    // Só a chave importa: editar a descrição do gasto não recarrega o ficheiro.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chave])
+
+  // O que esta' mesmo em ecra: o estado guardado, mas so' se for deste ficheiro.
+  const faturaVista = vista?.chave === chave ? vista : null
+  const faturaEmFalta = emFalta !== null && emFalta === chave
+
+  /** Anexa a um gasto que ja' existe: o ficheiro vai ao disco na hora, e a
+   *  fatura que la' estivesse e' apagada em vez de ficar a ocupar espaco. */
+  const anexar = async (gasto: Gasto, file: File | undefined) => {
+    if (!file) return
+    setAAnexar(true)
+    try {
+      const fatura = await saveFatura(file)
+      await removeFatura(gasto.fatura)
+      updateGasto(gasto.id, { fatura })
+    } finally {
+      setAAnexar(false)
+    }
+  }
+
+  const tirarFatura = async (gasto: Gasto) => {
+    await removeFatura(gasto.fatura)
+    updateGasto(gasto.id, { fatura: undefined })
+  }
+
+  const guardar = async () => {
     if (!descricao.trim() || valor <= 0) return
-    addGasto({ descricao: descricao.trim(), valor, categoria, data: dia })
+    let fatura: Fatura | undefined
+    if (novaFatura) {
+      setAAnexar(true)
+      try {
+        fatura = await saveFatura(novaFatura)
+      } finally {
+        setAAnexar(false)
+      }
+    }
+    addGasto({ descricao: descricao.trim(), valor, categoria, data: dia, fatura })
     setDescricao('')
     setValor(0)
     setCategoria('outros')
     setCategoriaTocada(false)
     setDia(diaDe(new Date()))
+    setNovaFatura(null)
+    setAberto(false)
+  }
+
+  const fecharNovo = () => {
+    setNovaFatura(null)
     setAberto(false)
   }
 
@@ -86,10 +188,26 @@ export function Gastos() {
     if (!categoriaTocada) setCategoria(categoriaSugerida(texto))
   }
 
-  const apagar = (g: Gasto) => {
+  /**
+   * Apagar um gasto apaga a fatura dele — senao o ficheiro ficava no disco sem
+   * ninguem que soubesse dele, invisivel e para sempre. Mas o blob e' lido
+   * ANTES, e guardado no desfazer: um toque em «Desfazer» tem de trazer o
+   * papel de volta, e nao so' a linha.
+   */
+  const apagar = async (g: Gasto) => {
     const index = budget.gastos.findIndex((x) => x.id === g.id)
+    const blob = g.fatura ? ((await getFaturaBlob(g.fatura)) ?? null) : null
+    await removeFatura(g.fatura)
     removeGasto(g.id)
-    setUndo({ gasto: g, index })
+    if (detalheId === g.id) setDetalheId(null)
+    setUndo({ gasto: g, index, fatura: blob })
+  }
+
+  const desfazerApagar = async () => {
+    if (!undo) return
+    if (undo.gasto.fatura && undo.fatura) await restoreFatura(undo.gasto.fatura, undo.fatura)
+    restoreGasto(undo.gasto, undo.index)
+    setUndo(null)
   }
 
   const abrirLimite = (c: GastoCategoria) => {
@@ -264,17 +382,35 @@ export function Gastos() {
                 {gastos.map((g) => (
                   <li
                     key={g.id}
-                    className="flex min-h-[56px] items-center gap-3 border-b border-[var(--border)] last:border-b-0"
+                    className="flex items-center border-b border-[var(--border)] last:border-b-0"
                   >
-                    <span className="min-w-0 flex-1">
-                      <span className="t-body block truncate">{g.descricao}</span>
-                      <span className="t-note block text-[var(--text-muted)]">
-                        {copy.categoriasGasto[g.categoria]}
-                      </span>
-                    </span>
-                    <span className="t-body tnum shrink-0 font-semibold">{eur(g.valor)}</span>
+                    {/* A linha inteira abre o gasto. Era um bloco morto: dizia
+                        o que foi e quanto, e não havia forma de lhe chegar. */}
                     <button
-                      onClick={() => apagar(g)}
+                      onClick={() => setDetalheId(g.id)}
+                      className="flex min-h-[56px] min-w-0 flex-1 items-center gap-3 py-2 text-left active:opacity-60"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="t-body block truncate">{g.descricao}</span>
+                        <span className="t-note flex items-center gap-1.5 text-[var(--text-muted)]">
+                          {copy.categoriasGasto[g.categoria]}
+                          {g.fatura ? (
+                            <>
+                              <Paperclip
+                                size={12}
+                                strokeWidth={2}
+                                aria-hidden
+                                className="shrink-0"
+                              />
+                              <span className="sr-only">{copy.gastos.temFatura}</span>
+                            </>
+                          ) : null}
+                        </span>
+                      </span>
+                      <span className="t-body tnum shrink-0 font-semibold">{eur(g.valor)}</span>
+                    </button>
+                    <button
+                      onClick={() => void apagar(g)}
                       aria-label={`${copy.gastos.apagar} ${g.descricao}`}
                       className="-mr-2 flex h-11 w-11 shrink-0 items-center justify-center text-[var(--text-muted)]"
                     >
@@ -292,7 +428,7 @@ export function Gastos() {
         {copy.gastos.verMeses}
       </GhostButton>
 
-      <Sheet open={aberto} onClose={() => setAberto(false)} title={copy.gastos.novo}>
+      <Sheet open={aberto} onClose={fecharNovo} title={copy.gastos.novo}>
         <div className="space-y-3">
           <label className="block">
             <span className="t-label mb-2 block">{copy.gastos.descricao}</span>
@@ -342,8 +478,58 @@ export function Gastos() {
             />
           </label>
 
-          <PrimaryButton onClick={guardar} disabled={!descricao.trim() || valor <= 0}>
-            {copy.gastos.guardar}
+          {/* Anexar aqui, e não só depois: quem regista o jantar à mesa tem o
+              talão na mão nesse momento e não volta lá amanhã. */}
+          <div>
+            <span className="t-label mb-2 block">{copy.gastos.fatura}</span>
+            <input
+              ref={inputNova}
+              type="file"
+              accept={TIPOS_FATURA}
+              className="hidden"
+              onChange={(e) => {
+                setNovaFatura(e.target.files?.[0] ?? null)
+                e.target.value = ''
+              }}
+            />
+            {novaFatura ? (
+              <div className="flex items-center gap-3 rounded-[var(--radius-sm)] border border-[var(--card-border)] bg-[var(--surface)] px-4 py-3">
+                <Paperclip
+                  size={18}
+                  strokeWidth={1.8}
+                  aria-hidden
+                  className="shrink-0 text-[var(--text-muted)]"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="t-body block truncate">{novaFatura.name}</span>
+                  <span className="t-note tnum block text-[var(--text-muted)]">
+                    {formatBytes(novaFatura.size)}
+                  </span>
+                </span>
+                <button
+                  onClick={() => setNovaFatura(null)}
+                  aria-label={copy.gastos.tirarFatura}
+                  className="-mr-2 flex h-11 w-11 shrink-0 items-center justify-center text-[var(--text-muted)] active:opacity-60"
+                >
+                  <X size={18} strokeWidth={1.8} aria-hidden />
+                </button>
+              </div>
+            ) : (
+              <GhostButton
+                className="flex items-center justify-center gap-2"
+                onClick={() => inputNova.current?.click()}
+              >
+                <Paperclip size={18} strokeWidth={1.8} aria-hidden />
+                {copy.gastos.anexarFatura}
+              </GhostButton>
+            )}
+          </div>
+
+          <PrimaryButton
+            onClick={() => void guardar()}
+            disabled={!descricao.trim() || valor <= 0 || aAnexar}
+          >
+            {aAnexar ? copy.gastos.aAnexar : copy.gastos.guardar}
           </PrimaryButton>
         </div>
       </Sheet>
@@ -372,14 +558,131 @@ export function Gastos() {
         </div>
       </Sheet>
 
+      {/* A apresentação do gasto: o que foi, quanto, quando — e o papel. */}
+      <Sheet
+        open={detalhe !== null}
+        onClose={() => setDetalheId(null)}
+        title={detalhe?.descricao ?? copy.gastos.detalhe}
+      >
+        {detalhe ? (
+          <div className="space-y-4">
+            <div>
+              <div className="t-hero tnum iris">{eur(detalhe.valor)}</div>
+              <p className="t-note mt-1 text-[var(--text-muted)]">
+                {copy.categoriasGasto[detalhe.categoria]} ·{' '}
+                {formatDate(new Date(`${detalhe.data}T00:00:00`))}
+              </p>
+            </div>
+
+            <input
+              ref={inputDetalhe}
+              type="file"
+              accept={TIPOS_FATURA}
+              className="hidden"
+              onChange={(e) => {
+                void anexar(detalhe, e.target.files?.[0])
+                e.target.value = ''
+              }}
+            />
+
+            <div>
+              <span className="t-label mb-2 block">{copy.gastos.fatura}</span>
+
+              {!detalhe.fatura ? (
+                <div className="space-y-2">
+                  <PrimaryButton
+                    onClick={() => inputDetalhe.current?.click()}
+                    disabled={aAnexar}
+                  >
+                    {aAnexar ? copy.gastos.aAnexar : copy.gastos.anexarFatura}
+                  </PrimaryButton>
+                  <p className="t-note text-[var(--text-muted)]">{copy.gastos.semFaturaAjuda}</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Um orçamento importado traz o bilhete da fatura mas não o
+                      ficheiro: os blobs não cabem no JSON. Dizer isso é melhor
+                      do que uma moldura vazia sem explicação. */}
+                  {faturaEmFalta ? (
+                    <Card>
+                      <p className="t-note text-[var(--text-muted)]">
+                        {copy.gastos.faturaEmFalta}
+                      </p>
+                    </Card>
+                  ) : detalhe.fatura.tipo.startsWith('image/') && faturaVista ? (
+                    // Sem `w-full`: a moldura toma o tamanho da fotografia em
+                    // vez de reservar meio ecrã em branco a um talão pequeno.
+                    <img
+                      src={faturaVista.url}
+                      alt={detalhe.fatura.nome}
+                      className="mx-auto max-h-[45dvh] max-w-full rounded-[var(--radius-sm)]"
+                    />
+                  ) : detalhe.fatura.tipo === 'application/pdf' && faturaVista ? (
+                    <object
+                      data={faturaVista.url}
+                      type="application/pdf"
+                      className="h-[45dvh] w-full rounded-[var(--radius-sm)]"
+                      aria-label={detalhe.fatura.nome}
+                    >
+                      <p className="t-note text-[var(--text-muted)]">
+                        {copy.gastos.faturaSemPreVisualizacao}
+                      </p>
+                    </object>
+                  ) : faturaVista ? (
+                    <Card>
+                      <p className="t-note text-[var(--text-muted)]">
+                        {copy.gastos.faturaSemPreVisualizacao}
+                      </p>
+                    </Card>
+                  ) : null}
+
+                  <p className="t-note tnum text-[var(--text-muted)]">
+                    {detalhe.fatura.nome} · {formatBytes(detalhe.fatura.tamanho)}
+                  </p>
+
+                  {/* Duas ações a par, e a destrutiva sozinha e discreta: uma
+                      pilha de quatro botões empurrava a fatura para fora. */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <GhostButton
+                      className="flex items-center justify-center gap-2"
+                      onClick={() =>
+                        faturaVista && saveBlob(faturaVista.blob, detalhe.fatura!.nome)
+                      }
+                      disabled={!faturaVista}
+                    >
+                      <Download size={18} strokeWidth={1.8} aria-hidden />
+                      {copy.gastos.descarregarFatura}
+                    </GhostButton>
+                    <GhostButton
+                      className="flex items-center justify-center gap-2"
+                      onClick={() => inputDetalhe.current?.click()}
+                      disabled={aAnexar}
+                    >
+                      <Paperclip size={18} strokeWidth={1.8} aria-hidden />
+                      {aAnexar ? copy.gastos.aAnexar : copy.gastos.substituirFatura}
+                    </GhostButton>
+                  </div>
+                  <button
+                    onClick={() => void tirarFatura(detalhe)}
+                    disabled={aAnexar}
+                    className="t-note flex min-h-[44px] w-full items-center justify-center gap-1.5 text-[var(--negative)] active:opacity-60"
+                  >
+                    <X size={15} strokeWidth={2} aria-hidden />
+                    {copy.gastos.tirarFatura}
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </div>
+        ) : null}
+      </Sheet>
+
       {undo ? (
         <UndoToast
           message={copy.gastos.apagado(undo.gasto.descricao)}
           actionLabel={copy.gastos.desfazer}
-          onAction={() => {
-            restoreGasto(undo.gasto, undo.index)
-            setUndo(null)
-          }}
+          onAction={() => void desfazerApagar()}
           onDismiss={() => setUndo(null)}
         />
       ) : null}

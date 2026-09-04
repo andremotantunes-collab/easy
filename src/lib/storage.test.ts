@@ -146,6 +146,44 @@ describe('migração dos custos do mês para gastos', () => {
     ])
   })
 
+  it('a fatura de um gasto sobrevive ao disco: o bilhete tem de voltar inteiro', () => {
+    // O blob vive no IndexedDB; o que passa por aqui e' so' a chave que lhe
+    // chama. Se o `coerce` a deixasse cair, o ficheiro continuava la' e mais
+    // ninguem saberia dele — um orfao invisivel.
+    const comFatura = {
+      ...defaultBudget,
+      gastos: [
+        {
+          id: 'g1',
+          descricao: 'Oficina',
+          valor: 8450,
+          categoria: 'transportes' as const,
+          data: '2026-09-04',
+          fatura: {
+            nome: 'talao.png',
+            tipo: 'image/png',
+            tamanho: 44_000,
+            blobKey: 'fatura.abc-123',
+          },
+        },
+        // O vizinho sem fatura tem de continuar sem ela, e nao ganhar uma vazia.
+        {
+          id: 'g2',
+          descricao: 'Café',
+          valor: 90,
+          categoria: 'alimentacao' as const,
+          data: '2026-09-04',
+        },
+      ],
+    }
+    saveBudget(comFatura)
+    flushBudget()
+
+    const lido = loadBudget()
+    expect(lido?.gastos[0].fatura).toEqual(comFatura.gastos[0].fatura)
+    expect(lido?.gastos[1].fatura).toBeUndefined()
+  })
+
   it('a ida e volta pelo disco preserva os gastos e os limites', () => {
     saveBudget({
       ...defaultBudget,

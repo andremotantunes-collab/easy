@@ -4,7 +4,7 @@
  * that a single "apagar tudo" clears both.
  */
 import { clear, createStore, del, get, set } from 'idb-keyval'
-import type { Doc } from './types'
+import type { Doc, Fatura } from './types'
 
 const store = createStore('easy-docs', 'blobs')
 const INDEX_KEY = 'docs.index.v1'
@@ -62,4 +62,45 @@ export async function restoreDoc(doc: Doc, blob: Blob, index: number): Promise<v
 
 export async function clearDocs(): Promise<void> {
   await clear(store)
+}
+
+/* --- Faturas ------------------------------------------------------------ *
+ *
+ * A fatura de um gasto vive no MESMO armazem dos documentos, e por duas
+ * razoes: um `clear` do armazem apaga tudo o que e' ficheiro de uma vez — o
+ * "apagar tudo" nao pode deixar taloes para tras — e nao ha' razao para abrir
+ * uma segunda base de dados para guardar a mesma coisa.
+ *
+ * O que NAO partilha e' o indice. Um talao nao e' um documento no sentido em
+ * que a app usa a palavra, e a lista dos Documentos ficaria ilegivel. Por isso
+ * as chaves sao `fatura.<id>` e nada disto toca em `writeIndex`: quem sabe que
+ * a fatura existe e' o gasto, que guarda o bilhete dela.
+ */
+
+const faturaKey = (): string => `fatura.${newId()}`
+
+/** Guarda o ficheiro e devolve o bilhete para o gasto agarrar. */
+export async function saveFatura(file: File): Promise<Fatura> {
+  const blobKey = faturaKey()
+  await set(blobKey, file, store)
+  return {
+    nome: file.name || 'fatura',
+    tipo: file.type || 'application/octet-stream',
+    tamanho: file.size,
+    blobKey,
+  }
+}
+
+export async function getFaturaBlob(fatura: Fatura): Promise<Blob | undefined> {
+  return get<Blob>(fatura.blobKey, store)
+}
+
+export async function removeFatura(fatura: Fatura | undefined): Promise<void> {
+  if (fatura) await del(fatura.blobKey, store)
+}
+
+/** Poe uma fatura apagada de volta na chave que era a dela — o caminho do
+ *  desfazer, que so' funciona se a chave for a mesma que o gasto guardou. */
+export async function restoreFatura(fatura: Fatura, blob: Blob): Promise<void> {
+  await set(fatura.blobKey, blob, store)
 }

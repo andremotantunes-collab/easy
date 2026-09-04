@@ -271,11 +271,13 @@ export function Sheet({
         onClick={onClose}
         aria-hidden
       />
+      {/* Uma folha com uma fatura lá dentro pode passar a altura do ecrã. Sem
+          o `max-h` e o scroll, o topo saía por cima e não havia como lá chegar. */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-[440px] rounded-t-[28px] bg-[var(--bg)] p-5"
+        className="relative max-h-[92dvh] w-full max-w-[440px] overflow-y-auto overscroll-contain rounded-t-[28px] bg-[var(--bg)] p-5"
         style={{
           paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
           animation: 'subir 260ms cubic-bezier(0.2, 0, 0, 1)',

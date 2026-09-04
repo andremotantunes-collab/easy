@@ -9,24 +9,13 @@ import type { Doc } from '../lib/types'
 import { formatBytes, formatDate } from '../lib/format'
 import { copy } from '../lib/copy'
 import { createZip, safeFileName } from '../lib/zip'
+import { saveBlob } from '../lib/download'
 
 function iconFor(tipo: string) {
   if (tipo.startsWith('image/')) return FileImage
   if (tipo === 'application/pdf') return FileText
   if (tipo.includes('sheet') || tipo.includes('csv')) return FileSpreadsheet
   return FileIcon
-}
-
-/** Anchor-triggered save. The blob is local, so nothing touches the network. */
-function saveBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
 export function Documentos() {

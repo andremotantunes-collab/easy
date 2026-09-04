@@ -648,6 +648,36 @@ Mudou nos três sítios onde o desenho vive, e não só no atalho do telemóvel:
 `scripts/gen-icons.mjs` que gera os PNG de 180, 192 e 512. Um atalho com S. ao
 lado de um cabeçalho com E. seria pior do que qualquer das duas letras.
 
-## 34. Âmbito que ficou fora
+## 34. Um gasto passou a poder ter o papel dele
+
+A lista dos gastos era um beco. Dizia o quê e quanto, e não havia forma de
+abrir um: tocar numa linha não fazia nada. Passou a haver uma **apresentação do
+gasto** — valor, categoria, dia — e é lá dentro que vive a **fatura**.
+
+Anexa-se em dois momentos, e são momentos diferentes de propósito: **ao
+registar**, porque quem escreve o jantar à mesa tem o talão na mão nesse
+instante e não volta lá amanhã; e **na apresentação**, para o papel que aparece
+depois. No primeiro caso o ficheiro só vai ao disco quando se guarda — abrir a
+folha, escolher um ficheiro e desistir não pode deixar um blob órfão no
+IndexedDB para sempre.
+
+**As faturas ficam fora do índice dos Documentos.** Partilham a base
+`easy-docs`, porque o «apagar tudo» é um `clear` dessa base e não pode deixar
+talões para trás, e porque não há razão para uma segunda base de dados. Mas as
+chaves são `fatura.*` e nada disto toca no índice: um ano de talões de café
+afogava os contratos e os recibos de vencimento que a lista dos Documentos
+existe para guardar. Quem sabe que a fatura existe é o gasto.
+
+**Apagar um gasto apaga a fatura dele** — senão o ficheiro ficava no disco sem
+ninguém que soubesse dele, invisível e para sempre. Mas o blob é lido **antes**
+e guardado no desfazer: um toque em «Desfazer» tem de trazer o papel de volta,
+e não só a linha.
+
+Fica um caso honesto por dizer: um orçamento **importado** de outro telemóvel
+traz o bilhete da fatura mas não o ficheiro, porque os blobs não cabem no JSON.
+A app diz isso na cara, com uma frase, em vez de mostrar uma moldura vazia sem
+explicação.
+
+## 35. Âmbito que ficou fora
 
 Nada foi cortado em silêncio. Ver a secção "O que ficou de fora" no `README.md`.

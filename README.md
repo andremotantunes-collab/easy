@@ -86,6 +86,7 @@ runtime, não usa contas nem analytics.
 |---|---|---|
 | Orçamento (rendimento, percentagens, despesas fixas, gastos, limites) | `localStorage` | `easy.budget.v1` |
 | Documentos (ficheiros e índice) | IndexedDB | base `easy-docs` |
+| Faturas dos gastos (ficheiros) | IndexedDB | base `easy-docs`, chaves `fatura.*` |
 | Perfil (nome, dados, PIN) | `localStorage` | `easy.profile.v1` |
 | Meses fechados | `localStorage` | `easy.historico.v1` |
 | Foto de perfil | IndexedDB | base `easy-perfil` |
@@ -159,6 +160,17 @@ sugestão, muda-se com um toque, e sem correspondência fica em «Outros» em ve
 de adivinhar. Tocar numa categoria na lista permite pôr-lhe um **limite
 mensal**: com limite, a categoria passa a dizer quanto ainda resta — ou quanto
 já passou. Sem limite, diz só o que gastaste.
+
+**A apresentação do gasto.** Tocar num gasto na lista abre-o: quanto foi, de
+que categoria, em que dia — e a **fatura**. Anexa-se uma fotografia do talão ou
+um PDF, ali ou já no momento de registar o gasto, e ela fica visível dentro do
+próprio gasto. Um gasto com fatura leva um clipe na lista. O ficheiro fica no
+IndexedDB do telemóvel como tudo o resto, e apagar o gasto apaga-o também —
+mas o «Desfazer» traz os dois de volta.
+
+As faturas **não aparecem** no separador Documentos, de propósito: um ano de
+talões de café afogava os contratos e os recibos que lá estão. Cada uma
+descarrega-se a partir do gasto a que pertence.
 
 **O gráfico.** Uma linha com o que se gastou ao longo do tempo, em cinco
 janelas: 7 dias, 30 dias, 12 meses, anos e tudo. Um dia sem gastos é um ponto a

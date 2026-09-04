@@ -224,6 +224,21 @@ export const copy = {
     semLimite: 'Sem limite',
     guardarLimite: 'Guardar limite',
 
+    // A apresentação de um gasto, e a fatura lá dentro.
+    detalhe: 'Gasto',
+    fatura: 'Fatura',
+    anexarFatura: 'Anexar fatura',
+    semFaturaAjuda: 'Tira uma fotografia ao talão ou escolhe um PDF. Fica no telemóvel, como tudo o resto.',
+    faturaPorAnexar: (nome: string) => `${nome} — anexa quando guardares`,
+    tirarFatura: 'Tirar do gasto',
+    substituirFatura: 'Trocar',
+    descarregarFatura: 'Descarregar',
+    faturaEmFalta:
+      'O ficheiro desta fatura não está neste telemóvel. Acontece quando o orçamento foi importado de outro sítio — os ficheiros não viajam no JSON.',
+    faturaSemPreVisualizacao: 'Este tipo de ficheiro não se pré-visualiza aqui. Descarrega para o abrir.',
+    aAnexar: 'A anexar…',
+    temFatura: 'Com fatura',
+
     fixasTitulo: 'Despesas fixas',
     fixasFrase: (valor: string) => `${valor} por mês, sempre as mesmas`,
     fixasNota: 'Já estão descontadas. Não é preciso registá-las aqui.',

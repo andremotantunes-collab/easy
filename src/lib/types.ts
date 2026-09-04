@@ -31,6 +31,24 @@ export type GastoCategoria =
   | 'outros'
 
 /**
+ * A fatura de um gasto: o talao do jantar, a fatura da oficina.
+ *
+ * O ficheiro em si vive no IndexedDB, ao lado dos documentos — um blob nao
+ * cabe no localStorage e nao tem nada que la' estar. Aqui fica so' o bilhete
+ * que lhe chama: o nome para mostrar, o tipo para saber se se pre-visualiza, e
+ * a chave para o ir buscar.
+ *
+ * NAO entra no indice dos Documentos de proposito: um ano de taloes de cafe'
+ * afogava os contratos e os recibos de vencimento que la' estao.
+ */
+export type Fatura = {
+  nome: string
+  tipo: string      // mime
+  tamanho: number
+  blobKey: string   // chave IndexedDB, no mesmo armazem dos documentos
+}
+
+/**
  * Um gasto: o jantar de 19,90 €, a gasolina, a farmacia.
  *
  * Tem um DIA e nao um mes, porque a pergunta "quanto gastei esta semana?" nao
@@ -45,6 +63,9 @@ export type Gasto = {
   categoria: GastoCategoria
   /** 'aaaa-mm-dd' — o dia em que aconteceu. */
   data: string
+  /** A fatura, quando ha' uma. Opcional: a esmagadora maioria dos gastos do
+   *  dia a dia nao tem papel nenhum, e obrigar a um seria um imposto. */
+  fatura?: Fatura
 }
 
 /** Limite mensal por categoria, quando existe. Uma categoria sem limite

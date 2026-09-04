@@ -12,6 +12,7 @@ type BudgetStore = {
   removeFixa: (id: string) => FixedExpense | undefined
   restoreFixa: (expense: FixedExpense, index: number) => void
   addGasto: (gasto: Omit<Gasto, 'id'>) => void
+  updateGasto: (id: string, patch: Partial<Gasto>) => void
   removeGasto: (id: string) => Gasto | undefined
   restoreGasto: (gasto: Gasto, index: number) => void
   setLimite: (categoria: GastoCategoria, valor: Money | null) => void
@@ -81,6 +82,17 @@ export const useBudget = create<BudgetStore>((set, get) => ({
       budget: persist({
         ...get().budget,
         gastos: [...get().budget.gastos, { ...gasto, id: newId() }],
+      }),
+    }),
+
+  /** Um `fatura: undefined` no patch tem de APAGAR o campo e nao ser ignorado,
+   *  senao tirar a fatura de um gasto nao tirava nada. O spread faz isso: a
+   *  chave existe no patch, logo sobrepoe-se. */
+  updateGasto: (id, patch) =>
+    set({
+      budget: persist({
+        ...get().budget,
+        gastos: get().budget.gastos.map((g) => (g.id === id ? { ...g, ...patch } : g)),
       }),
     }),
 
