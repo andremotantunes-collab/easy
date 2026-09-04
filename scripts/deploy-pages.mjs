@@ -16,11 +16,21 @@ const REPO = 'https://github.com/andremotantunes-collab/easy.git'
 const PREFIXO = '/easy/'
 const SAIDA = join('.tmp', 'pages')
 
+// No Windows o `npm` e' um .cmd e precisa de shell; o `git` e' um executavel
+// e nao pode leva'-lo — com shell, os argumentos perdem as aspas e uma
+// mensagem de commit com espacos parte-se em pedacos.
 const corre = (cmd, args, opts = {}) =>
-  execFileSync(cmd, args, { stdio: 'inherit', shell: process.platform === 'win32', ...opts })
+  execFileSync(cmd, args, { stdio: 'inherit', ...opts })
+
+const correNpm = (args, opts = {}) =>
+  execFileSync('npm', args, {
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    ...opts,
+  })
 
 console.log(`\nA compilar com base ${PREFIXO}`)
-corre('npm', ['run', 'build'], { env: { ...process.env, BASE_PATH: PREFIXO } })
+correNpm(['run', 'build'], { env: { ...process.env, BASE_PATH: PREFIXO } })
 
 // O Pages serve 404.html quando o caminho não existe como ficheiro. Sendo uma
 // cópia do index, a app arranca e o router trata do resto.
