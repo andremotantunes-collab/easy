@@ -706,6 +706,51 @@ sobre o teu mês em cinzento não é sóbrio, é apagado. O que se manteve foi a
 regra que interessa: a cor nunca é o único portador — a palavra está lá dentro
 da pastilha.
 
-## 36. Âmbito que ficou fora
+## 36. O objetivo, e porque é que ele não se vê
+
+Um objetivo de poupança. Um só, opcional, e a regra que define a *feature* é
+sobre onde ele **não** está: nem no Hero, nem numa métrica, nem na frase de
+estado, nem num *badge*, nem no aviso de mês novo, nem no *onboarding*. Sem
+contador, sem celebração, sem lembrete. Só existe quando alguém o for ver de
+propósito.
+
+**Duas portas, ambas discretas.** A linha «Poupança» da legenda do Início, e as
+Definições ao lado do pote. A linha da legenda é, ao pixel, igual às outras
+três — mesmo tipo, mesma cor, mesmo quadrado, mesma barra, sem seta e sem
+`aria` a mais. A única diferença está no destino, e um ecrã não mostra destinos.
+Há um teste no guião de captura que lê o texto todo do Início e falha se
+encontrar «objetivo», «Carro», «14 000» ou «meta», e outro que confirma que as
+quatro linhas partilham uma só classe.
+
+**Não há um segundo saldo, e essa ausência é a *feature*.** O `Goal` guarda
+nome, alvo e data de criação — e mais nada. O dinheiro é a
+`poupancaAcumulada`, que já existia e é a mesma que alimenta o fundo de
+emergência. Guardar um saldo dentro do objetivo abria a porta a dois números a
+discordarem um do outro, e a app teria de escolher em qual mentir. É por isso
+que **remover o objetivo não mexe no dinheiro**, e há um teste a prendê-lo.
+
+**A linha da honestidade não é opcional.** Como o pote é um só, a folha tem de
+dizer que é o mesmo dinheiro do fundo de emergência, e diz quantos meses ele
+cobre. O corte entre as duas variantes ficou em «há fundo» e não em «o fundo
+está completo»: com 5,8 meses de cobertura, dizer que este dinheiro *falta*
+para o fundo esconderia os 5,8 meses que já lá estão. A variante «ainda te
+falta» é para quem não tem cobertura nenhuma, onde é a única verdadeira.
+
+**Três estados que se tratam à mão**, porque a aritmética sozinha mente:
+sem poupança mensal devolve `null` e não `Infinity`, e não mostra data nenhuma;
+acima de 600 meses diz «mais de 50 anos ao ritmo atual» em vez de uma data
+absurda; e atingido ganha a tudo — quem já lá chegou não precisa de saber que
+parou de poupar. Os meses arredondam sempre **para cima**: é no mês a seguir ao
+último mês inteiro que o dinheiro lá está.
+
+**O que ficou por fazer, e porquê.** A *spec* dizia que a `poupancaAcumulada`
+devia crescer sozinha em `poupanca` no virar do mês. A **decisão 17** diz o
+contrário, e diz que foi escolha do cliente: o fecho do mês arquiva e não mexe
+num único número dele. Não se reverte uma decisão dessas de passagem, dentro de
+outra *feature*, e a escrever por cima de um saldo que o utilizador escreveu à
+mão. O objetivo funciona nos dois regimes — lê o pote, seja quem for a
+enchê-lo. Fica por decidir, não por esquecimento.
+
+## 37. Âmbito que ficou fora
 
 Nada foi cortado em silêncio. Ver a secção "O que ficou de fora" no `README.md`.

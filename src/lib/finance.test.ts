@@ -17,6 +17,7 @@ const base: Budget = {
   poupancaAcumulada: 0,
   taxaAnualEsperada: 5,
   modoDiscreto: false,
+  objetivo: null,
 }
 
 const b = (over: Partial<Budget> = {}): Budget => ({ ...base, ...over })

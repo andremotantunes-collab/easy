@@ -1,9 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Screen } from '../components/Layout'
 import { Avatar } from '../components/Avatar'
 import { Logo } from '../components/Logo'
 import { Donut } from '../components/Donut'
+import { ObjetivoSheet } from '../components/ObjetivoSheet'
 import {
   Bar, Card, GhostButton, Label, PrimaryButton, StatTile, useCountUp,
 } from '../components/ui'
@@ -36,6 +37,7 @@ export function Inicio() {
   const fechadoAgora = useHistorico((s) => s.fechadoAgora)
   const dispensarAviso = useHistorico((s) => s.dispensarAviso)
   const navigate = useNavigate()
+  const [objetivoAberto, setObjetivoAberto] = useState(false)
   const eur = useEUR()
 
   const [params, setParams] = useSearchParams()
@@ -254,7 +256,16 @@ export function Inicio() {
                 return (
                   <li key={s.key}>
                     <button
-                      onClick={() => (atual ? navigate(SLICE_ROUTE[s.key]) : undefined)}
+                      onClick={() => {
+                        if (!atual) return
+                        // A porta discreta. Esta linha é, em pixels, idêntica
+                        // às outras: mesmo tipo, mesma cor, mesmo quadrado,
+                        // mesma barra, sem seta, sem badge, sem `aria` a mais.
+                        // A única diferença está no destino, e um ecrã não
+                        // mostra destinos.
+                        if (s.key === 'poupanca') setObjetivoAberto(true)
+                        else navigate(SLICE_ROUTE[s.key])
+                      }}
                       className="w-full py-2.5 text-left active:opacity-60"
                     >
                       <span className="flex items-center gap-3">
@@ -316,6 +327,10 @@ export function Inicio() {
           </div>
         </>
       )}
+
+      {/* Fica fora do `vazio ? :` de propósito: a folha é montada sempre, mas
+          só se abre por um toque. Nada no ecrã por cima dela lhe faz referência. */}
+      <ObjetivoSheet open={objetivoAberto} onClose={() => setObjetivoAberto(false)} />
     </Screen>
   )
 }

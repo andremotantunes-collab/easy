@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Screen } from '../components/Layout'
 import { Card, GhostButton, Label, PrimaryButton } from '../components/ui'
 import { MoneyInput } from '../components/MoneyInput'
+import { ObjetivoSheet } from '../components/ObjetivoSheet'
 import { useBudget } from '../store/budget'
 import { clearBudgetStorage, exportBudget, importBudget } from '../lib/storage'
 import { clearDocs } from '../lib/docs'
@@ -12,6 +13,7 @@ export function Definicoes() {
   const { budget, set, replace, reset } = useBudget()
   const [msg, setMsg] = useState<string | null>(null)
   const [confirmar, setConfirmar] = useState('')
+  const [objetivoAberto, setObjetivoAberto] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const exportar = () => {
@@ -52,6 +54,13 @@ export function Definicoes() {
         <p className="t-note mt-2 text-[var(--text-muted)]">
           {copy.definicoes.poupancaAcumuladaAjuda}
         </p>
+
+        {/* A segunda porta para o objetivo, e a última. Está aqui, ao lado do
+            pote, porque é sobre este pote que a meta é — e não em lado nenhum
+            onde apareça sem se ir lá de propósito. */}
+        <GhostButton className="mt-3" onClick={() => setObjetivoAberto(true)}>
+          {budget.objetivo ? budget.objetivo.nome : copy.objetivo.definir}
+        </GhostButton>
       </Card>
 
       <Card className="mb-3">
@@ -98,6 +107,8 @@ export function Definicoes() {
           {copy.definicoes.apagarBotao}
         </PrimaryButton>
       </Card>
+
+      <ObjetivoSheet open={objetivoAberto} onClose={() => setObjetivoAberto(false)} />
     </Screen>
   )
 }

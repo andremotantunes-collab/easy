@@ -1,5 +1,7 @@
 import { create } from 'zustand'
-import type { Budget, Gasto, GastoCategoria, LimitesPorCategoria, FixedExpense, Money } from '../lib/types'
+import type {
+  Budget, Gasto, GastoCategoria, Goal, LimitesPorCategoria, FixedExpense, Money,
+} from '../lib/types'
 import { defaultBudget, loadBudget, saveBudget } from '../lib/storage'
 import type { Preset } from '../lib/copy'
 
@@ -16,6 +18,7 @@ type BudgetStore = {
   removeGasto: (id: string) => Gasto | undefined
   restoreGasto: (gasto: Gasto, index: number) => void
   setLimite: (categoria: GastoCategoria, valor: Money | null) => void
+  setObjetivo: (objetivo: Goal | null) => void
   applyPreset: (preset: Preset) => void
   toggleDiscreto: () => void
   replace: (budget: Budget) => void
@@ -117,6 +120,10 @@ export const useBudget = create<BudgetStore>((set, get) => ({
     else limites[categoria] = valor
     set({ budget: persist({ ...get().budget, limites }) })
   },
+
+  /** `null` remove a meta. NAO mexe na `poupancaAcumulada`: o dinheiro nao
+   *  desaparece por se apagar um objetivo sobre ele. */
+  setObjetivo: (objetivo) => set({ budget: persist({ ...get().budget, objetivo }) }),
 
   applyPreset: (preset) =>
     set({

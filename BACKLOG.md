@@ -6,7 +6,8 @@ incluído — tenha a tentação de o adiantar.
 ## Fase 8, com feedback real de uso
 
 - Bloqueio local por PIN ou WebAuthn, para os documentos.
-- Objetivos de poupança com barra de progresso.
+- **Mais do que um** objetivo. Um só está feito (ver a decisão 36); vários
+  obrigam a repartir o pote único, e essa é a decisão difícil.
 - *Snapshot* mensal com *sparkline* de 6 meses.
 - Custo em horas de trabalho.
 - Partilhar o donut como imagem.

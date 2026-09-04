@@ -2,7 +2,7 @@
  * Budget persistence. localStorage only — no account, no server, no network.
  * The key is a technical identifier, so the brand is lowercase and dotless here.
  */
-import type { Budget, Gasto, Money } from './types'
+import type { Budget, Gasto, Goal, Money } from './types'
 
 const DIA = /^\d{4}-\d{2}-\d{2}$/
 
@@ -14,6 +14,19 @@ function gastoValido(g: Gasto): boolean {
     DIA.test(g.data) &&
     typeof g.valor === 'number' &&
     Number.isFinite(g.valor)
+  )
+}
+
+/** Um objetivo so' conta se souber para onde vai. Um payload editado a mao ou
+ *  vindo de uma versao anterior pode trazer lixo no lugar dele. */
+function objetivoValido(o: unknown): o is Goal {
+  if (!o || typeof o !== 'object') return false
+  const g = o as Partial<Goal>
+  return (
+    typeof g.nome === 'string' &&
+    typeof g.alvo === 'number' &&
+    Number.isFinite(g.alvo) &&
+    g.alvo > 0
   )
 }
 
@@ -34,6 +47,7 @@ export const defaultBudget: Budget = {
   poupancaAcumulada: 0,
   taxaAnualEsperada: 5,
   modoDiscreto: false,
+  objetivo: null,
 }
 
 type Stored = { version: number; budget: Budget }
@@ -101,6 +115,11 @@ function coerce(input: unknown): Budget {
     // editado a mao pode nao o ter. Fora com ele, em vez de somar NaN.
     gastos: Array.isArray(b.gastos) ? b.gastos.filter(gastoValido) : [],
     limites: b.limites && typeof b.limites === 'object' ? b.limites : {},
+    // Sem objetivo e' o estado normal, nao uma falha: qualquer coisa que nao
+    // seja um objetivo inteiro volta a `null` em silencio.
+    objetivo: objetivoValido(b.objetivo)
+      ? { ...b.objetivo, criadoEm: b.objetivo.criadoEm ?? new Date().toISOString() }
+      : null,
   }
 }
 

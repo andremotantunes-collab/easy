@@ -177,6 +177,30 @@ janelas: 7 dias, 30 dias, 12 meses, anos e tudo. Um dia sem gastos é um ponto a
 zero e não um ponto que falta — sem isso a linha ligava dias que não se seguem
 e mentia sobre o ritmo. A tracejado fica a média do período.
 
+## O objetivo
+
+Há **um** objetivo de poupança, opcional, e **escondido à vista**. Não aparece
+no Início, nem numa métrica, nem num aviso, nem no onboarding: não há contador,
+não há celebração, não há lembrete. Só existe quando o fores ver.
+
+Chega-se lá por duas portas, ambas discretas:
+
+1. Um toque na linha **Poupança** da legenda do donut, no Início. Essa linha é,
+   ao pixel, igual às outras três.
+2. **Perfil → Definições**, ao lado da poupança acumulada.
+
+A folha diz o nome, quanto já lá está de quanto queres, a percentagem, o que
+falta e — se estiveres a poupar alguma coisa — em que mês lá chegas ao ritmo
+atual. Sem ritmo não há data nenhuma: diz que o objetivo não avança e leva-te ao
+plano. Acima de 50 anos também não há data, porque «Março de 2183» não ajuda
+ninguém a decidir nada.
+
+**A linha da honestidade.** A app tem **um só pote de poupança**
+(`poupancaAcumulada`), e o objetivo é uma meta sobre esse pote — não uma conta
+separada. A folha diz isso sempre, e diz também quantos meses de fundo de
+emergência esse mesmo dinheiro cobre. Remover o objetivo **não** mexe no
+dinheiro.
+
 ## Os meses
 
 Tocar em **Ver todos os meses** (ou Perfil → Todos os meses) dá a lista de todos

@@ -91,6 +91,24 @@ export type Budget = {
   taxaAnualEsperada: number
   /** Hides every euro amount on screen, without hiding the structure. */
   modoDiscreto: boolean
+  /** A meta sobre a poupanca acumulada, quando existe. `null` por omissao, e
+   *  invisivel em todo o lado menos onde se vai ve'-la de proposito. */
+  objetivo: Goal | null
+}
+
+/**
+ * O objetivo: UM so', opcional, e discreto por desenho.
+ *
+ * Nao tem `valorJaJuntado` nenhum, e essa ausencia e' a feature. A Easy. tem um
+ * SO' pote de poupanca — `poupancaAcumulada` — e o objetivo e' uma meta sobre
+ * esse pote, nao uma conta a` parte. Guardar aqui um segundo saldo era abrir a
+ * porta a dois numeros a discordarem um do outro, e a app teria de escolher em
+ * qual mentir.
+ */
+export type Goal = {
+  nome: string
+  alvo: Money
+  criadoEm: string  // ISO
 }
 
 export type Doc = {

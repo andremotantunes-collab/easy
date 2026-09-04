@@ -113,6 +113,35 @@ export const copy = {
     },
   },
 
+  /**
+   * O objetivo. Nada aqui aparece sem alguem ir la' de proposito: nao ha' uma
+   * unica string do objetivo usada no Inicio, na frase de estado, no
+   * onboarding ou no aviso de mes novo.
+   */
+  objetivo: {
+    titulo: 'Objetivo',
+    semObjetivo: 'Ainda não tens um objetivo definido.',
+    definir: 'Definir um objetivo',
+    nome: 'Nome',
+    alvo: 'Quanto queres juntar',
+    jaTens: 'Quanto já tens de parte',
+    guardar: 'Guardar',
+    editar: 'Editar',
+    remover: 'Remover objetivo',
+    de: (alvo: string) => `de ${alvo}`,
+    faltam: (valor: string) => `Faltam ${valor}`,
+    aoRitmo: (mensal: string, quando: string) => `Ao ritmo de ${mensal}/mês → ${quando}`,
+    parado: 'Não estás a poupar nada por mês. Este objetivo não avança.',
+    verPlano: 'Ajustar o plano',
+    longe: 'Mais de 50 anos ao ritmo atual.',
+    atingido: 'Objetivo atingido.',
+    // A linha da honestidade. Nao e' opcional: a app tem UM pote de poupanca, e
+    // o objetivo e' uma meta sobre esse pote e nao uma conta a` parte.
+    poteCoberto: (meses: string) =>
+      `Este é o mesmo dinheiro que cobre o teu fundo de emergência (${meses} meses).`,
+    poteEmFalta: 'Este é o mesmo dinheiro que ainda te falta para o fundo de emergência.',
+  },
+
   plano: {
     titulo: 'Plano',
     rendimento: 'Rendimento mensal',
