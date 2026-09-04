@@ -1,55 +1,62 @@
 /**
- * Publica a app no GitHub Pages, em /easy/.
+ * Publica a app.
  *
- * Compila com o prefixo certo, deixa um 404.html igual ao index — é assim que
- * o Pages devolve a app quando se recarrega um caminho fundo como /easy/gastos
- * — e empurra o resultado para o ramo `gh-pages`. O código-fonte fica no
- * `master`; aqui vai só o que o browser precisa.
+ * Publicar é enviar: o GitHub compila e põe no ar sozinho a cada envio para o
+ * `master`, com os testes pelo caminho (ver .github/workflows/publicar.yml).
+ * Este guião só existe para não ser preciso decorar isso — envia, espera pela
+ * publicação, e diz como correu.
  *
  * Corre: npm run deploy
  */
 import { execFileSync } from 'node:child_process'
-import { cpSync, rmSync, writeFileSync, copyFileSync, mkdirSync } from 'node:fs'
-import { join } from 'node:path'
 
-const REPO = 'https://github.com/andremotantunes-collab/easy.git'
-const PREFIXO = '/easy/'
-const SAIDA = join('.tmp', 'pages')
+const REPO = 'andremotantunes-collab/easy'
+const SITE = 'https://andremotantunes-collab.github.io/easy/'
 
-// No Windows o `npm` e' um .cmd e precisa de shell; o `git` e' um executavel
-// e nao pode leva'-lo — com shell, os argumentos perdem as aspas e uma
-// mensagem de commit com espacos parte-se em pedacos.
-const corre = (cmd, args, opts = {}) =>
-  execFileSync(cmd, args, { stdio: 'inherit', ...opts })
+const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()
+const espera = (ms) => new Promise((r) => setTimeout(r, ms))
 
-const correNpm = (args, opts = {}) =>
-  execFileSync('npm', args, {
+const porCommitar = git('status', '--porcelain')
+if (porCommitar) {
+  console.error('\nHá alterações por guardar. Faz o commit primeiro:\n')
+  console.error(porCommitar.split('\n').slice(0, 10).join('\n'))
+  process.exit(1)
+}
+
+console.log('\nA enviar para o GitHub…')
+execFileSync('git', ['push', 'origin', 'HEAD'], { stdio: 'inherit' })
+
+// O `gh` é opcional: sem ele, o envio já chegou e o resto acontece na mesma.
+let temGh = true
+try {
+  execFileSync('gh', ['--version'], { stdio: 'ignore' })
+} catch {
+  temGh = false
+}
+if (!temGh) {
+  console.log(`\nEnviado. O site atualiza-se dentro de um minuto: ${SITE}\n`)
+  process.exit(0)
+}
+
+console.log('A aguardar a publicação…')
+await espera(5000)
+const corridas = JSON.parse(
+  execFileSync('gh', ['run', 'list', '--repo', REPO, '--limit', '1', '--json', 'databaseId,status'], {
+    encoding: 'utf8',
+  }),
+)
+if (corridas.length === 0) {
+  console.log(`\nEnviado. O site atualiza-se dentro de um minuto: ${SITE}\n`)
+  process.exit(0)
+}
+
+try {
+  execFileSync('gh', ['run', 'watch', String(corridas[0].databaseId), '--repo', REPO, '--exit-status'], {
     stdio: 'inherit',
-    shell: process.platform === 'win32',
-    ...opts,
   })
-
-console.log(`\nA compilar com base ${PREFIXO}`)
-correNpm(['run', 'build'], { env: { ...process.env, BASE_PATH: PREFIXO } })
-
-// O Pages serve 404.html quando o caminho não existe como ficheiro. Sendo uma
-// cópia do index, a app arranca e o router trata do resto.
-copyFileSync(join('dist', 'index.html'), join('dist', '404.html'))
-
-rmSync(SAIDA, { recursive: true, force: true })
-mkdirSync(SAIDA, { recursive: true })
-cpSync('dist', SAIDA, { recursive: true })
-// Sem isto o Jekyll do Pages ignora ficheiros e pastas começados por _.
-writeFileSync(join(SAIDA, '.nojekyll'), '')
-
-const git = (...args) => corre('git', ['-C', SAIDA, ...args])
-git('init', '-q')
-git('checkout', '-q', '-B', 'gh-pages')
-git('config', 'user.name', 'Easy Build')
-git('config', 'user.email', 'x.opscorp@gmail.com')
-git('add', '-A')
-git('commit', '-q', '-m', `Publicar a app em ${PREFIXO}`)
-git('push', '-q', '-f', REPO, 'gh-pages')
-
-console.log('\nNo ar: https://andremotantunes-collab.github.io/easy/')
-console.log('Pode demorar até um minuto a atualizar.\n')
+  console.log(`\nNo ar: ${SITE}\n`)
+} catch {
+  console.error('\nA publicação falhou. O site continua na versão anterior.')
+  console.error(`Vê o que correu mal: gh run view ${corridas[0].databaseId} --repo ${REPO} --log-failed\n`)
+  process.exit(1)
+}

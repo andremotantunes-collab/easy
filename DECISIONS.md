@@ -604,6 +604,19 @@ abre, faz o *onboarding*, regista um gasto, sobrevive a recarregar um caminho
 fundo, e o *service worker* regista — que é o que faz a app funcionar sem rede
 depois da primeira visita.
 
+**Publica-se sozinha, e os testes estão no caminho.** Cada envio para o
+`master` corre os testes, compila e publica. Pô-los antes da publicação e não
+depois é a diferença entre um site que está sempre a funcionar e um site que
+avisa depois de partir.
+
+**O endereço é público, e não dá para ser de outra maneira aqui.** O
+repositório chegou a ser posto privado para confirmar, e o site caiu com 404 —
+o GitHub Pages só serve de repositórios privados em planos pagos, e mesmo aí o
+*site* continuaria aberto a quem tivesse o link: sites com controlo de acesso
+existem só no plano Enterprise. Como a app não tem servidor nem dados no
+servidor, o que fica exposto é o código e mais nada. Quem quiser o código
+fechado tem de trocar de alojamento, não de definição.
+
 ## 33. Âmbito que ficou fora
 
 Nada foi cortado em silêncio. Ver a secção "O que ficou de fora" no `README.md`.

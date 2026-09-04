@@ -30,7 +30,7 @@ Outros comandos:
 | `npm run check:contrast` | Valida todos os pares de contraste nos dois temas |
 | `npm run icons` | Regenera os ícones PWA a partir do SVG |
 | `npm run shots -- 9` | Captura os ecrãs nos dois temas e monta a folha de contacto; acrescenta `max` no fim para o iPhone 13 Pro Max |
-| `npm run deploy` | Compila e publica no GitHub Pages, em `/easy/` |
+| `npm run deploy` | Envia para o GitHub, que corre os testes e publica |
 | `npm run verify` | Verificação automática a 390×844 **e** 430×932: rede, scroll horizontal, alvos de toque, campos ≥ 16 px |
 | `npm run offline` | Escreve `Easy.html`: a app inteira num ficheiro, para levar para o telemóvel |
 
@@ -50,15 +50,15 @@ worker* guarda tudo o que é preciso.
 Os dados continuam a ser só teus e só do telemóvel: o endereço serve a app,
 nunca vê um número teu.
 
-Para publicar uma versão nova:
+**A app publica-se sozinha.** Cada envio para o `master` corre os testes,
+compila e põe no ar — e uma versão com testes a falhar nunca chega ao
+telemóvel, porque a publicação só acontece depois de eles passarem. Demora
+cerca de um minuto.
 
 ```bash
-npm run deploy
+npm run deploy   # envia e espera pela publicação
+git push         # dá exatamente no mesmo
 ```
-
-Compila com o prefixo `/easy/`, deixa um `404.html` igual ao `index.html` — é
-assim que o Pages devolve a app quando se recarrega `/easy/gastos` — e empurra
-o resultado para o ramo `gh-pages`. O código-fonte fica no `master`.
 
 ## Levar num ficheiro só
 
