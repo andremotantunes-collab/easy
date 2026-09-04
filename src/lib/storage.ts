@@ -2,12 +2,25 @@
  * Budget persistence. localStorage only — no account, no server, no network.
  * The key is a technical identifier, so the brand is lowercase and dotless here.
  */
-import type { Budget } from './types'
+import type { Budget, Gasto, Money } from './types'
+
+const DIA = /^\d{4}-\d{2}-\d{2}$/
+
+/** Um gasto so' conta se souber quando foi e quanto foi. */
+function gastoValido(g: Gasto): boolean {
+  return (
+    !!g &&
+    typeof g.data === 'string' &&
+    DIA.test(g.data) &&
+    typeof g.valor === 'number' &&
+    Number.isFinite(g.valor)
+  )
+}
 
 export const BUDGET_KEY = 'easy.budget.v1'
 export const THEME_KEY = 'easy.theme.v1'
 export const ONBOARDING_KEY = 'easy.onboarded.v1'
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 4
 
 export const defaultBudget: Budget = {
   rendimentoMensal: 0,
@@ -15,21 +28,54 @@ export const defaultBudget: Budget = {
   modoDespesas: 'percentagem',
   despesasPercentagem: 50,
   despesasFixas: [],
+  gastos: [],
+  limites: {},
   alocacao: { investimentos: 10, poupanca: 10 },
-  diaDeRecebimento: 28,
   poupancaAcumulada: 0,
   taxaAnualEsperada: 5,
+  modoDiscreto: false,
 }
 
 type Stored = { version: number; budget: Budget }
 
 /**
- * Schema migrations. Deliberately present and deliberately empty: v1 is the
- * first shipped schema. New versions add a step here and bump SCHEMA_VERSION.
+ * Schema migrations, one per version step. A new version adds a step here and
+ * bumps SCHEMA_VERSION.
  */
 const migrations: Record<number, (b: Budget) => Budget> = {
-  // 1: (b) => ({ ...b, novoCampo: 0 }),
+  // v1 -> v2: expenses gained a billing period, and the budget a discreet mode.
+  1: (b) => ({
+    ...b,
+    modoDiscreto: b.modoDiscreto ?? false,
+    despesasFixas: (b.despesasFixas ?? []).map((e) => ({
+      ...e,
+      periodicidade: e.periodicidade ?? 'mensal',
+    })),
+  }),
+  // v2 -> v3: um mes passou a poder ter custos so' dele. O passo seguinte
+  // converte-os, por isso aqui basta deixa'-los passar intactos.
+  2: (b) => b,
+  // v3 -> v4: esses custos passaram a ser gastos, com dia e categoria. Um
+  // custo antigo so' sabia o mes, por isso fica no dia 1 desse mes: e' a unica
+  // coisa honesta a fazer com uma data que nunca chegou a ser guardada.
+  3: (b) => {
+    const velho = b as Budget & { custosDoMes?: CustoAntigo[] }
+    const convertidos: Gasto[] = Array.isArray(velho.custosDoMes)
+      ? velho.custosDoMes.map((c) => ({
+          id: c.id,
+          descricao: c.nome,
+          valor: c.valor,
+          categoria: 'outros',
+          data: c.mes + '-01',
+        }))
+      : []
+    const { custosDoMes: _antigos, ...resto } = velho
+    return { ...resto, gastos: [...convertidos, ...(velho.gastos ?? [])], limites: velho.limites ?? {} }
+  },
 }
+
+/** A forma que os custos do mes tinham na v3, so' para a migracao os ler. */
+type CustoAntigo = { id: string; nome: string; valor: Money; mes: string }
 
 function migrate(stored: Stored): Budget {
   let budget = stored.budget
@@ -47,7 +93,14 @@ function coerce(input: unknown): Budget {
     ...defaultBudget,
     ...b,
     alocacao: { ...defaultBudget.alocacao, ...(b.alocacao ?? {}) },
-    despesasFixas: Array.isArray(b.despesasFixas) ? b.despesasFixas : [],
+    // A hand-edited or pre-v2 payload can carry expenses without a period.
+    despesasFixas: Array.isArray(b.despesasFixas)
+      ? b.despesasFixas.map((e) => ({ ...e, periodicidade: e.periodicidade ?? 'mensal' }))
+      : [],
+    // Um gasto sem dia nao pertence a periodo nenhum, e um payload antigo ou
+    // editado a mao pode nao o ter. Fora com ele, em vez de somar NaN.
+    gastos: Array.isArray(b.gastos) ? b.gastos.filter(gastoValido) : [],
+    limites: b.limites && typeof b.limites === 'object' ? b.limites : {},
   }
 }
 
@@ -63,12 +116,70 @@ export function loadBudget(): Budget | null {
   }
 }
 
-export function saveBudget(budget: Budget): void {
+/**
+ * A escrita e' adiada de proposito.
+ *
+ * `localStorage.setItem` e' sincrono, e um arrasto do slider chama isto a cada
+ * evento de input — dezenas de vezes por segundo. Serializar o orcamento
+ * inteiro e tocar no disco a cada frame e' o que fazia o cursor arrastar num
+ * telemovel. Aqui so' fica a ultima versao pendente, e ela vai ao disco 250 ms
+ * depois de o dedo parar.
+ *
+ * A promessa "um reload nao perde nada" mantem-se porque nada sai do ecra sem
+ * passar por `pagehide` ou por `visibilitychange`, e ambos descarregam.
+ */
+let pendente: Budget | null = null
+let agendada: ReturnType<typeof setTimeout> | null = null
+
+function escrever(budget: Budget): void {
   try {
     localStorage.setItem(BUDGET_KEY, JSON.stringify({ version: SCHEMA_VERSION, budget }))
   } catch {
     // Private mode or a full quota: the app keeps working in memory.
   }
+}
+
+/** Leva ao disco o que estiver pendente, agora. */
+export function flushBudget(): void {
+  if (agendada !== null) {
+    clearTimeout(agendada)
+    agendada = null
+  }
+  if (pendente !== null) {
+    escrever(pendente)
+    pendente = null
+  }
+}
+
+/** Esquece o que estava pendente — senao uma escrita a caminho ressuscitaria
+ *  dados que o utilizador acabou de apagar. */
+function descartarPendente(): void {
+  if (agendada !== null) {
+    clearTimeout(agendada)
+    agendada = null
+  }
+  pendente = null
+}
+
+export function saveBudget(budget: Budget): void {
+  pendente = budget
+  if (agendada !== null) return
+  agendada = setTimeout(() => {
+    agendada = null
+    if (pendente !== null) {
+      escrever(pendente)
+      pendente = null
+    }
+  }, 250)
+}
+
+if (typeof document !== 'undefined') {
+  // `pagehide` e' o unico que o Safari de iOS dispara de forma fiavel quando a
+  // app vai para tras; `visibilitychange` apanha o mudar de separador.
+  window.addEventListener('pagehide', flushBudget)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) flushBudget()
+  })
 }
 
 export function exportBudget(budget: Budget): string {
@@ -98,9 +209,11 @@ export function setOnboarded(done: boolean): void {
 }
 
 export function clearBudgetStorage(): void {
+  descartarPendente()
   try {
     localStorage.removeItem(BUDGET_KEY)
     localStorage.removeItem(ONBOARDING_KEY)
+    localStorage.removeItem('easy.historico.v1')
   } catch {
     // ignored
   }

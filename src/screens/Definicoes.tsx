@@ -3,17 +3,13 @@ import { Screen } from '../components/Layout'
 import { Card, GhostButton, Label, PrimaryButton } from '../components/ui'
 import { MoneyInput } from '../components/MoneyInput'
 import { useBudget } from '../store/budget'
-import { useTheme } from '../lib/theme'
-import type { ThemeChoice } from '../lib/theme'
 import { clearBudgetStorage, exportBudget, importBudget } from '../lib/storage'
 import { clearDocs } from '../lib/docs'
 import { copy } from '../lib/copy'
 
-const VERSAO = '1.0.0'
-
+/** The data page: what is stored, how to take it out, how to destroy it. */
 export function Definicoes() {
   const { budget, set, replace, reset } = useBudget()
-  const [tema, setTema] = useTheme()
   const [msg, setMsg] = useState<string | null>(null)
   const [confirmar, setConfirmar] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -45,52 +41,8 @@ export function Definicoes() {
     window.location.href = '/'
   }
 
-  const opcoesTema: { id: ThemeChoice; label: string }[] = [
-    { id: 'auto', label: copy.definicoes.temaAuto },
-    { id: 'light', label: copy.definicoes.temaClaro },
-    { id: 'dark', label: copy.definicoes.temaEscuro },
-  ]
-
   return (
-    <Screen title={copy.definicoes.titulo}>
-      <Card className="mb-3">
-        <Label className="mb-2">{copy.definicoes.tema}</Label>
-        <div className="flex rounded-[var(--radius-sm)] bg-[var(--surface-2)] p-1">
-          {opcoesTema.map((o) => (
-            <button
-              key={o.id}
-              onClick={() => setTema(o.id)}
-              aria-pressed={tema === o.id}
-              className={
-                'min-h-[44px] flex-1 rounded-[8px] text-sm font-medium transition-opacity duration-150 ' +
-                (tema === o.id ? 'bg-[var(--segment-active)] text-[var(--text)]' : 'text-[var(--text-muted)]')
-              }
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      </Card>
-
-      <Card className="mb-3">
-        <Label className="mb-2">{copy.definicoes.diaRecebimento}</Label>
-        <div className="flex items-center gap-4">
-          <input
-            type="range"
-            min={1}
-            max={28}
-            step={1}
-            value={budget.diaDeRecebimento}
-            aria-label={copy.definicoes.diaRecebimento}
-            onChange={(e) => set({ diaDeRecebimento: Number(e.target.value) })}
-          />
-          <span className="t-value tnum w-8 shrink-0 text-right">{budget.diaDeRecebimento}</span>
-        </div>
-        <p className="t-note mt-1 text-[var(--text-muted)]">
-          {copy.definicoes.diaRecebimentoAjuda}
-        </p>
-      </Card>
-
+    <Screen title={copy.definicoes.titulo} back="/perfil">
       <Card className="mb-3">
         <MoneyInput
           label={copy.definicoes.poupancaAcumulada}
@@ -124,7 +76,7 @@ export function Definicoes() {
         <p className="t-note mt-3 text-[var(--text-muted)]">{copy.definicoes.ondeFicam}</p>
       </Card>
 
-      <Card className="mb-3 border-[var(--negative)]">
+      <Card className="border-[var(--negative)]">
         <Label className="!text-[var(--negative)]">{copy.definicoes.apagar}</Label>
         <p className="t-note mt-1 text-[var(--text-muted)]">{copy.definicoes.apagarAviso}</p>
         <label className="mt-3 block">
@@ -146,11 +98,6 @@ export function Definicoes() {
           {copy.definicoes.apagarBotao}
         </PrimaryButton>
       </Card>
-
-      <p className="t-note text-[var(--text-muted)]">
-        {copy.brand} · {copy.definicoes.versao} {VERSAO}
-      </p>
-      <p className="t-note mt-2 text-[var(--text-muted)]">{copy.investir.disclaimer}</p>
     </Screen>
   )
 }

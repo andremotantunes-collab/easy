@@ -1,6 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#0F766E"/>
-  <circle cx="32" cy="32" r="17" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"
-          stroke-dasharray="80 27" transform="rotate(-90 32 32)"/>
-  <circle cx="46.5" cy="45" r="4" fill="#FFFFFF"/>
+  <defs>
+    <linearGradient id="chao" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EDF4FF"/>
+      <stop offset="52%" stop-color="#EAFAFA"/>
+      <stop offset="100%" stop-color="#FDEDF5"/>
+    </linearGradient>
+    <linearGradient id="letra" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0%" stop-color="#0066E0"/>
+      <stop offset="100%" stop-color="#0E8E9E"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#chao)"/>
+  <g transform="translate(-1.5 0)">
+    <path d="M 41 19.1 L 23 19.1 L 23 44.9 L 41 44.9 M 23 32 L 36.5 32"
+          fill="none" stroke="url(#letra)" stroke-width="6.2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="50" cy="47.8" r="3.3" fill="url(#letra)"/>
+  </g>
 </svg>

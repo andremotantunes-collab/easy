@@ -26,6 +26,9 @@
 @layer base {
   html {
     background: var(--bg);
+    /* Rotating the phone must not resize the type. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     /* The manual toggle sets data-theme; this keeps form controls and
        scrollbars in step with it instead of with the OS. */
     color-scheme: light;
@@ -45,11 +48,104 @@
     -webkit-font-smoothing: antialiased;
     /* No horizontal scroll at 390px, ever. */
     overflow-x: hidden;
+    /* A scroll that reaches the end of a screen stays in the app instead of
+       dragging the browser chrome with it. */
+    overscroll-behavior-y: contain;
+  }
+
+  /* Touch behaviour for everything you can press: no 300ms wait for a
+     double-tap, no grey flash, and no accidental text selection when a tap
+     turns into a small drag. */
+  button, a, [role='button'], label, summary {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  button, a, [role='button'] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Everything pressable gives a little under the finger. 60ms down, 200ms
+     back: it reads as a physical surface, not as an animation. */
+  button:active, [role='button']:active {
+    transform: scale(0.985);
+  }
+  button, [role='button'] {
+    transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
   }
 
   button, input, select, textarea { font: inherit; color: inherit; }
   button { background: none; border: 0; cursor: pointer; }
 }
+
+/* O efeito iridescente do modelo, aplicado uma vez so: no numero que a app
+   existe para mostrar. Todas as paragens do gradiente passam 3:1 contra a
+   superficie, que e' o piso de texto grande — e ha sempre a percentagem e a
+   legenda a dizer o mesmo por palavras. */
+.iris {
+  background: linear-gradient(100deg, var(--cat-sobras) 0%, var(--cat-poupanca) 45%, var(--cat-invest) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+/* Sem suporte de recorte, fica a cor cheia em vez de texto invisivel. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .iris { color: var(--accent); -webkit-text-fill-color: var(--accent); background: none; }
+}
+
+/* Entrada do modelo: aparecer e subir 16 px em 480 ms, uma vez, ao montar.
+   Sem cascata escalonada — numa app abre-se o mesmo ecra dezenas de vezes por
+   semana e um atraso por cartao passa depressa de elegante a lento. */
+@keyframes entrar {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+.entra { animation: entrar 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* O campo de luz da Aurora: dois gradientes radiais com ciclos de 12 e 14 s,
+   fixos por tras do conteudo. Sao dois e nao quatro, e o desfoque e' 34 px e
+   nao 70, porque isto corre num telemovel e o cursor do Plano tem de continuar
+   a 60 fps enquanto o campo se move. Param com o separador em segundo plano. */
+.aurora {
+  position: fixed;
+  inset: -30%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--aurora-opacidade);
+  contain: strict;
+}
+/* O desfoque esta' aqui, no elemento que anima, e nao no pai — e' a diferenca
+   entre desfocar 160% do ecra uma vez e desfoca'-lo a cada frame. Com o filtro
+   no pai, mexer um filho invalida a entrada do filtro e o desenho todo e'
+   refeito; no proprio elemento, a textura desfocada e' rasterizada uma vez e o
+   compositor limita-se a desloca'-la. Medido: pior frame de 42 ms para 14 ms. */
+.aurora-campo {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: var(--aurora-mistura);
+  filter: saturate(1.2) blur(var(--aurora-desfoque));
+  will-change: transform;
+}
+.aurora-1 {
+  background: radial-gradient(42% 38% at 24% 18%, var(--aurora-1) 0%, transparent 62%);
+  animation: aurora-deriva-1 12s ease-in-out infinite alternate;
+}
+.aurora-2 {
+  background:
+    radial-gradient(38% 34% at 80% 26%, var(--aurora-2) 0%, transparent 60%),
+    radial-gradient(44% 36% at 50% 88%, var(--aurora-3) 0%, transparent 62%);
+  animation: aurora-deriva-2 14s ease-in-out infinite alternate;
+}
+@keyframes aurora-deriva-1 {
+  from { transform: translate3d(-3%, -2%, 0) scale(1); }
+  to   { transform: translate3d(5%, 4%, 0) scale(1.16); }
+}
+@keyframes aurora-deriva-2 {
+  from { transform: translate3d(3%, 3%, 0) scale(1.12); }
+  to   { transform: translate3d(-5%, -3%, 0) scale(0.95); }
+}
+body.pausado .aurora-campo { animation-play-state: paused; }
 
 /* Every number in the product is tabular. A value must never jitter when it
    changes -- this is the single rule that makes the live slider feel solid. */
@@ -60,13 +156,23 @@ input[inputmode='decimal'] {
   font-feature-settings: 'tnum' 1;
 }
 
-/* Type scale from the design system. */
-.t-hero  { font-size: 48px; line-height: 52px; font-weight: 600; letter-spacing: -0.02em; }
-.t-title { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; }
-.t-value { font-size: 22px; line-height: 28px; font-weight: 500; }
-.t-body  { font-size: 16px; line-height: 22px; }
-.t-label { font-size: 13px; line-height: 18px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
-.t-note  { font-size: 12px; line-height: 16px; }
+/* Escala do modelo Aurora: Hero clamp(2.5rem, 5vw, 4rem), H1 2.25rem,
+   corpo 1rem/1.6, maiusculas pequenas a 0.75rem com peso 500 e um pouco de
+   espacejamento. A familia e' a do sistema, sem excecao: uma fonte carregada
+   da rede partia a promessa de a app funcionar offline. */
+.t-hero  { font-size: clamp(2.5rem, 11vw, 3rem); line-height: 1.05; font-weight: 700; letter-spacing: -0.03em; }
+.t-title { font-size: 1.5rem; line-height: 1.2; font-weight: 700; letter-spacing: -0.025em; }
+.t-value { font-size: 1.25rem; line-height: 1.4; font-weight: 600; letter-spacing: -0.015em; }
+.t-body  { font-size: 1rem; line-height: 1.6; }
+.t-label { font-size: 0.75rem; line-height: 1.4; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+.t-note  { font-size: 0.8125rem; line-height: 1.5; }
+
+/* O papel monoespacado do modelo, sem descarregar nada. */
+.t-mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+}
 
 /* Allowed motion: 150-200ms on opacity/transform, plus the donut sweep. */
 @media (prefers-reduced-motion: reduce) {
@@ -79,7 +185,7 @@ input[inputmode='decimal'] {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 /* Range input, styled by hand so it matches the tokens in both themes. */
@@ -104,7 +210,8 @@ input[type='range']::-webkit-slider-thumb {
   margin-top: -11px;
   border-radius: 50%;
   background: var(--accent);
-  border: 3px solid var(--bg);
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow-pill);
 }
 input[type='range']::-moz-range-track { height: 6px; border-radius: 3px; background: var(--surface-2); }
 input[type='range']::-moz-range-thumb {

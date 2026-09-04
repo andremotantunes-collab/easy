@@ -29,8 +29,9 @@ Outros comandos:
 | `npm test` | Testes do motor financeiro e da marca |
 | `npm run check:contrast` | Valida todos os pares de contraste nos dois temas |
 | `npm run icons` | Regenera os ícones PWA a partir do SVG |
-| `npm run shots -- 7` | Captura os ecrãs a 390×844 nos dois temas e monta a folha de contacto |
-| `npm run verify` | Verificação automática: rede, scroll horizontal, alvos de toque |
+| `npm run shots -- 9` | Captura os ecrãs nos dois temas e monta a folha de contacto; acrescenta `max` no fim para o iPhone 13 Pro Max |
+| `npm run verify` | Verificação automática a 390×844 **e** 430×932: rede, scroll horizontal, alvos de toque, campos ≥ 16 px |
+| `npm run offline` | Escreve `Easy.html`: a app inteira num ficheiro, para levar para o telemóvel |
 
 ## Instalar no telemóvel
 
@@ -43,6 +44,23 @@ endereço.
 Depois do primeiro carregamento a app **funciona offline**: o *service worker*
 guarda tudo o que é preciso.
 
+## Levar num ficheiro só
+
+```bash
+npm run offline
+```
+
+Escreve **`Easy.html`** (~280 kB) com tudo lá dentro — CSS, JavaScript e ícone.
+Passa-se para o telemóvel por cabo, AirDrop, email ou Drive, e abre-se a partir
+do próprio telemóvel: **não precisa de servidor nem de ligação**.
+
+No **Android** abre-se o ficheiro no Chrome e os dados ficam guardados como
+seria de esperar. No **iPhone**, o Safari abre-o, mas o iOS trata cada abertura
+de um ficheiro local como um sítio diferente: os dados podem não sobreviver a
+fechar, e não há "adicionar ao ecrã principal". Para uso a sério no iPhone,
+usa antes a PWA instalada — depois do primeiro carregamento também funciona
+sem rede.
+
 ## Onde ficam os dados
 
 Tudo fica **no dispositivo**. A app não tem backend, não faz chamadas de rede em
@@ -50,27 +68,39 @@ runtime, não usa contas nem analytics.
 
 | O quê | Onde | Chave |
 |---|---|---|
-| Orçamento (rendimento, percentagens, despesas fixas) | `localStorage` | `easy.budget.v1` |
+| Orçamento (rendimento, percentagens, despesas fixas, gastos, limites) | `localStorage` | `easy.budget.v1` |
 | Documentos (ficheiros e índice) | IndexedDB | base `easy-docs` |
+| Perfil (nome, dados, PIN) | `localStorage` | `easy.profile.v1` |
+| Meses fechados | `localStorage` | `easy.historico.v1` |
+| Foto de perfil | IndexedDB | base `easy-perfil` |
 | Tema | `localStorage` | `easy.theme.v1` |
 | Onboarding feito | `localStorage` | `easy.onboarded.v1` |
 
 **Consequência importante:** se limpares os dados do browser, perdes tudo. Por
-isso há **Exportar orçamento (JSON)** em Definições e **Exportar tudo (ZIP)** em
-Documentos.
+isso há **Exportar orçamento (JSON)** em Perfil › Os teus dados e **Exportar
+tudo (ZIP)** em Documentos.
 
-## Os cinco ecrãs
+## Três separadores
+
+A app tem três destinos, e só três:
+
+| Separador | O que faz |
+|---|---|
+| **Início** (`/`) | O mês, e os meses anteriores. Fita de meses no topo, o bolo em grande, o donut com as quatro fatias e três métricas. Só mostra: não diz o que gastar, nem quanto por dia |
+| **Documentos** (`/documentos`) | Uma lista, sem filtros nem categorias: contratos, recibos, seguros e impostos, guardados só neste telemóvel |
+| **Perfil** (`/perfil`) | O teu perfil — foto, nome e resumo do mês — e tudo o que se ajusta, em lista |
+
+O que se ajusta abre a partir do Perfil, com seta de voltar no header:
 
 | Rota | O que faz |
 |---|---|
-| `/` | O bolo: Hero, donut, legenda, quanto podes gastar por dia, taxa de poupança e peso das fixas |
 | `/plano` | Rendimento e *sliders* de investimento/poupança, com o donut a reagir em tempo real |
-| `/fixas` | Lista de despesas agrupada por categoria, total mensal e anual |
+| `/fixas` | Lista de despesas agrupada por categoria, com **Mensal / Anual** por despesa, total mensal e anual |
 | `/investir` | Simulador de juro composto e cinco perfis de risco, sem produtos nem marcas |
-| `/documentos` | Contratos, recibos, seguros e impostos, guardados só neste telemóvel |
+| `/perfil/dados` | Nome, email, telemóvel, data de nascimento e NIF |
+| `/definicoes` | Poupança acumulada, exportar e importar o orçamento, apagar tudo |
 
-`/inicio` é o onboarding de dois passos (só da primeira vez) e as Definições
-abrem pelo ícone no header.
+`/inicio` é o onboarding de dois passos, só da primeira vez.
 
 ## Estrutura
 
@@ -86,6 +116,83 @@ src/
 scripts/contrast-check.ts  gate de contraste que falha o build
 ```
 
+## Gastos
+
+O separador **Gastos** é onde se escreve o que se gastou — «Jantar», 19,90 € — e
+o número lá em cima desce na hora. É a mesma pergunta da app, respondida ao
+longo do mês em vez de uma vez no princípio.
+
+A app separa duas coisas que costumam andar misturadas:
+
+| | O que é | Onde |
+|---|---|---|
+| **Despesas fixas** | A renda, o carro, o ginásio, o seguro. Repetem-se todos os meses (ou uma vez por ano, e a app divide por doze). | Perfil → Despesas fixas |
+| **Gastos** | O jantar, a gasolina, a farmácia, o dentista. Aconteceram num dia, e contam nesse mês e em mais nenhum. | Separador Gastos |
+
+A conta faz-se por esta ordem:
+
+    o que entra → fixas → gastos → investimentos → poupança → o bolo
+
+Os gastos **saem do bolo** e não do que investes nem do que poupas: um jantar de
+19,90 € não é motivo para deixar de investir, é menos 19,90 € para gastar. No
+anel do Início aparecem como uma fatia laranja, que só existe quando há gastos.
+
+**As categorias.** Cada gasto tem uma, e ela vem sugerida pelo que escreveste —
+«jantar» é alimentação, «gasolina» é transportes, «farmácia» é saúde. É uma
+sugestão, muda-se com um toque, e sem correspondência fica em «Outros» em vez
+de adivinhar. Tocar numa categoria na lista permite pôr-lhe um **limite
+mensal**: com limite, a categoria passa a dizer quanto ainda resta — ou quanto
+já passou. Sem limite, diz só o que gastaste.
+
+**O gráfico.** Uma linha com o que se gastou ao longo do tempo, em cinco
+janelas: 7 dias, 30 dias, 12 meses, anos e tudo. Um dia sem gastos é um ponto a
+zero e não um ponto que falta — sem isso a linha ligava dias que não se seguem
+e mentia sobre o ritmo. A tracejado fica a média do período.
+
+## Os meses
+
+Tocar em **Ver todos os meses** (ou Perfil → Todos os meses) dá a lista de todos
+os meses que a app viu, do mais recente para trás: o que guardaste, o que
+sobrou, e uma fita com as fatias desse mês. É a fita que deixa comparar dois
+meses sem ler um número — o mês com uma despesa fora do normal tem uma faixa
+laranja que os outros não têm. Tocar num mês abre o Início nesse mês.
+
+A app guarda cada mês que passa. **Sem servidor, nada corre com a app fechada**,
+por isso um mês não fecha à meia-noite do dia 1: fecha **na primeira vez que
+abres a app já no mês seguinte**. Nessa altura o mês anterior é arquivado como
+estava, aparece um aviso no Início, e passa a estar na fita de meses lá no topo.
+
+No Início aparece também **quanto os meses fechados puseram de lado** — a soma
+da poupança e dos investimentos desses meses. É a soma dos registos, não do teu
+saldo no banco: diz o que o plano separou nos meses que a app viu.
+
+**O fecho não mexe em nenhum número teu.** A poupança acumulada continua a ser
+tua para alterar. Se ficares meses sem abrir, é arquivado um registo — o do mês
+que estava aberto; a app não inventa os meses que nunca viu.
+
+## A conta
+
+Não há contas nem servidor: a conta da **Easy.** é local. Crias um perfil com o
+teu nome, podes pôr uma foto e preencher os teus dados, e podes definir um
+**PIN de 4 dígitos**. Com PIN definido, a app abre trancada e o botão
+**Terminar sessão** tranca-a na hora.
+
+**O PIN não cifra nada.** Tranca a porta da frente — serve para o telemóvel
+passar de mão sem mostrar o teu dinheiro. Quem tiver o telemóvel desbloqueado e
+as ferramentas do browser abertas chega aos dados na mesma. Se te esqueceres do
+PIN não há como o repor: a única saída é apagar tudo e recomeçar.
+
+## Duas coisas que convém saber
+
+**Despesas anuais.** Uma despesa marcada como anual aparece a cheio pelo valor
+que é cobrado (`240,00 €/ano`) e, por baixo, pelo que custa por mês
+(`20,00 €/mês`). É o valor mensal que entra na conta e nos totais.
+
+**Modo discreto.** Um interruptor no Perfil — ou um toque no donut — troca todos
+os valores em euros por `••••`. O donut, as percentagens e os nomes ficam à
+vista: esconde valores, nunca estrutura. Os campos que estás a editar continuam
+legíveis, senão não dava para escrever neles.
+
 ## O que ficou de fora
 
 - **Pré-visualização de PDF em iOS.** O `<object>` não renderiza PDF no Safari de
@@ -93,8 +200,6 @@ scripts/contrast-check.ts  gate de contraste que falha o build
   resolveria — meio dia.
 - **Swipe para apagar com gesto contínuo real.** Está implementado com eventos de
   ponteiro e limiar; falta a fase de *momentum* e o encosto elástico. ~2 horas.
-- **Edição de tags dos documentos.** As tags são atribuídas automaticamente pelo
-  nome do ficheiro e ainda não se editam à mão. ~1 hora.
 - **Reordenar despesas fixas** por arrastamento. ~2 horas.
 - **Importar documentos a partir do ZIP exportado** (a exportação existe, o
   caminho de volta não). ~2 horas.

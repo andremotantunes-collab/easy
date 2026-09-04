@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  compute, custoVidaAnual, diasAteProximoRecebimento, fundoEmergenciaMeses,
-  nivelTaxaPoupanca, pesoDespesasFixas, porDia, projecao, proximoRecebimento,
-  sugestoesDefice, taxaPoupanca,
+  compute, gastosDe, fundoEmergenciaMeses, mensalizado, nivelTaxaPoupanca, pesoDespesasFixas,
+  projecao, sugestoesDefice, taxaPoupanca, totalFixas,
 } from './finance'
 import type { Budget } from './types'
 
@@ -12,10 +11,12 @@ const base: Budget = {
   modoDespesas: 'percentagem',
   despesasPercentagem: 50,
   despesasFixas: [],
+  gastos: [],
+  limites: {},
   alocacao: { investimentos: 10, poupanca: 10 },
-  diaDeRecebimento: 28,
   poupancaAcumulada: 0,
   taxaAnualEsperada: 5,
+  modoDiscreto: false,
 }
 
 const b = (over: Partial<Budget> = {}): Budget => ({ ...base, ...over })
@@ -42,9 +43,9 @@ describe('compute - caso normal', () => {
     const r = compute(b({
       modoDespesas: 'lista',
       despesasFixas: [
-        { id: '1', nome: 'Renda', valor: 75000, categoria: 'casa', ativo: true },
-        { id: '2', nome: 'Carro', valor: 18000, categoria: 'transportes', ativo: true },
-        { id: '3', nome: 'Ginásio', valor: 4000, categoria: 'saude', ativo: false },
+        { id: '1', nome: 'Renda', valor: 75000, categoria: 'casa', periodicidade: 'mensal', ativo: true },
+        { id: '2', nome: 'Carro', valor: 18000, categoria: 'transportes', periodicidade: 'mensal', ativo: true },
+        { id: '3', nome: 'Ginásio', valor: 4000, categoria: 'saude', periodicidade: 'mensal', ativo: false },
       ],
     }))
     expect(r.despesasFixas).toBe(93000)
@@ -59,8 +60,6 @@ describe('compute - limites', () => {
       rendimentoTotal: 0, despesasFixas: 0, investimentos: 0, poupanca: 0, sobras: 0,
     })
     expect(r.emDefice).toBe(false)
-    expect(taxaPoupanca(r)).toBe(0)
-    expect(pesoDespesasFixas(r)).toBe(0)
   })
 
   it('défice mantém o número negativo visível e sugere pela ordem certa', () => {
@@ -76,7 +75,6 @@ describe('compute - limites', () => {
     const r = compute(b({ despesasPercentagem: 60, alocacao: { investimentos: 25, poupanca: 15 } }))
     expect(r.sobras).toBe(0)
     expect(r.emDefice).toBe(false)
-    expect(taxaPoupanca(r)).toBeCloseTo(0.4, 10)
   })
 })
 
@@ -104,68 +102,70 @@ describe('arredondamentos', () => {
   })
 })
 
-describe('dias até ao próximo recebimento', () => {
-  it('conta dentro do mesmo mês', () => {
-    expect(diasAteProximoRecebimento(new Date(2026, 0, 5), 28)).toBe(23)
-  })
-
-  it('fevereiro de 28 dias', () => {
-    // 1/2 -> 28/2
-    expect(diasAteProximoRecebimento(new Date(2026, 1, 1), 28)).toBe(27)
-    // 31/1 -> 28/2 (janeiro tem 31)
-    expect(diasAteProximoRecebimento(new Date(2026, 0, 31), 28)).toBe(28)
-  })
-
-  it('mês de 30 dias', () => {
-    // 10/4 -> 1/5, abril tem 30
-    expect(diasAteProximoRecebimento(new Date(2026, 3, 10), 1)).toBe(21)
-  })
-
-  it('mês de 31 dias', () => {
-    // 5/1 -> 1/2, janeiro tem 31
-    expect(diasAteProximoRecebimento(new Date(2026, 0, 5), 1)).toBe(27)
-  })
-
-  it('no próprio dia de recebimento aponta para o ciclo seguinte', () => {
-    expect(diasAteProximoRecebimento(new Date(2026, 2, 28), 28)).toBe(31) // 28/3 -> 28/4
-    expect(proximoRecebimento(new Date(2026, 2, 28), 28).getMonth()).toBe(3)
-  })
-
-  it('trava o dia fora do intervalo 1-28', () => {
-    expect(proximoRecebimento(new Date(2026, 0, 5), 31).getDate()).toBe(28)
-    expect(proximoRecebimento(new Date(2026, 0, 5), 0).getDate()).toBe(1)
-  })
-
-  it('nunca devolve menos de um dia', () => {
-    expect(diasAteProximoRecebimento(new Date(2026, 0, 27), 28)).toBeGreaterThanOrEqual(1)
-  })
-})
-
 describe('métricas', () => {
-  it('por dia divide as sobras pelos dias que faltam', () => {
-    expect(porDia(72000, 30)).toBe(2400) // 24,00 €/dia
-    expect(porDia(72000, 0)).toBe(0)
-  })
-
   it('taxa de poupança e respetivo nível', () => {
     const r = compute(b())
     expect(taxaPoupanca(r)).toBeCloseTo(0.2, 10)
+    expect(nivelTaxaPoupanca(0.25)).toBe('bom')
     expect(nivelTaxaPoupanca(0.2)).toBe('bom')
     expect(nivelTaxaPoupanca(0.15)).toBe('medio')
     expect(nivelTaxaPoupanca(0.05)).toBe('baixo')
+    expect(taxaPoupanca(compute(b({ rendimentoMensal: 0 })))).toBe(0)
   })
 
   it('peso das despesas fixas', () => {
     expect(pesoDespesasFixas(compute(b()))).toBeCloseTo(0.5, 10)
+    expect(pesoDespesasFixas(compute(b({ rendimentoMensal: 0 })))).toBe(0)
   })
 
   it('fundo de emergência em meses', () => {
-    expect(fundoEmergenciaMeses(288000, 120000)).toBeCloseTo(2.4, 10)
-    expect(fundoEmergenciaMeses(288000, 0)).toBe(0)
+    expect(fundoEmergenciaMeses(600_00, 100_00)).toBe(6)
+    expect(fundoEmergenciaMeses(0, 100_00)).toBe(0)
+    expect(fundoEmergenciaMeses(500_00, 0)).toBe(0)
+  })
+})
+
+describe('despesas anuais diluídas', () => {
+  const anual = (valor: number) => ({
+    id: 'a', nome: 'IUC', valor, categoria: 'transportes' as const,
+    periodicidade: 'anual' as const, ativo: true,
   })
 
-  it('custo de vida anual são as fixas mais o bolo, vezes 12', () => {
-    expect(custoVidaAnual(compute(b()))).toBe((120000 + 72000) * 12)
+  it('240 €/ano contam como 20,00 €/mês', () => {
+    expect(mensalizado(anual(24000))).toBe(2000)
+  })
+
+  it('uma despesa mensal entra pelo valor tal como é cobrada', () => {
+    expect(mensalizado({
+      id: 'm', nome: 'Renda', valor: 75000, categoria: 'casa',
+      periodicidade: 'mensal', ativo: true,
+    })).toBe(75000)
+  })
+
+  it('arredonda ao cêntimo e nunca devolve fração', () => {
+    // 100,00 €/ano = 8,3333... €/mes
+    expect(mensalizado(anual(10000))).toBe(833)
+    expect(Number.isInteger(mensalizado(anual(10000)))).toBe(true)
+  })
+
+  it('o total das fixas soma os mensalizados, não os valores cobrados', () => {
+    const budget = b({
+      modoDespesas: 'lista',
+      despesasFixas: [
+        { id: 'f1', nome: 'Renda', valor: 75000, categoria: 'casa', periodicidade: 'mensal', ativo: true },
+        anual(24000),
+      ],
+    })
+    expect(totalFixas(budget, 240000)).toBe(75000 + 2000)
+    expect(compute(budget).despesasFixas).toBe(77000)
+  })
+
+  it('uma despesa anual inativa não conta', () => {
+    const budget = b({
+      modoDespesas: 'lista',
+      despesasFixas: [{ ...anual(24000), ativo: false }],
+    })
+    expect(totalFixas(budget, 240000)).toBe(0)
   })
 })
 
@@ -195,5 +195,79 @@ describe('juro composto', () => {
   it('entradas vazias devolvem zero', () => {
     expect(projecao(0, 5, 10)).toEqual({ total: 0, capital: 0, juro: 0 })
     expect(projecao(20000, 5, 0)).toEqual({ total: 0, capital: 0, juro: 0 })
+  })
+})
+
+describe('gastos', () => {
+  const gasto = (data: string, valor: number, descricao = 'Jantar') => ({
+    id: `${data}-${descricao}`,
+    descricao,
+    valor,
+    categoria: 'alimentacao' as const,
+    data,
+  })
+
+  it('conta os do mês pedido e mais nenhum', () => {
+    const orcamento = b({
+      gastos: [
+        gasto('2026-09-03', 1990),
+        gasto('2026-09-28', 4510, 'Supermercado'),
+        gasto('2026-08-14', 50000, 'Dentista'),
+      ],
+    })
+    expect(gastosDe(orcamento, '2026-09')).toBe(6500)
+    expect(gastosDe(orcamento, '2026-08')).toBe(50000)
+    expect(gastosDe(orcamento, '2026-07')).toBe(0)
+  })
+
+  it('o mês de um gasto sai do dia, incluindo o primeiro e o último', () => {
+    const orcamento = b({ gastos: [gasto('2026-09-01', 100), gasto('2026-09-30', 200)] })
+    expect(gastosDe(orcamento, '2026-09')).toBe(300)
+  })
+
+  it('saem do bolo, e não do que se investe nem do que se poupa', () => {
+    const semGasto = compute(b(), '2026-09')
+    const comGasto = compute(b({ gastos: [gasto('2026-09-03', 1990)] }), '2026-09')
+
+    expect(comGasto.gastos).toBe(1990)
+    // O que se investe e o que se poupa não se mexem: são uma decisão, não um
+    // resto. O mês tem menos para gastar, e é só isso que muda.
+    expect(comGasto.investimentos).toBe(semGasto.investimentos)
+    expect(comGasto.poupanca).toBe(semGasto.poupanca)
+    expect(comGasto.despesasFixas).toBe(semGasto.despesasFixas)
+    expect(comGasto.sobras).toBe(semGasto.sobras - 1990)
+  })
+
+  it('cada gasto novo desce o bolo exatamente o seu valor', () => {
+    let orcamento = b()
+    let antes = compute(orcamento, '2026-09').sobras
+    for (const [i, valor] of [1990, 350, 12000, 799].entries()) {
+      orcamento = b({
+        gastos: [...orcamento.gastos, gasto('2026-09-1' + i, valor, 'g' + i)],
+      })
+      const agora = compute(orcamento, '2026-09').sobras
+      expect(antes - agora).toBe(valor)
+      antes = agora
+    }
+  })
+
+  it('as fatias continuam a somar o total, ao cêntimo', () => {
+    const r = compute(b({ rendimentoMensal: 123457, gastos: [gasto('2026-09-09', 4321)] }), '2026-09')
+    expect(r.despesasFixas + r.gastos + r.investimentos + r.poupanca + r.sobras).toBe(
+      r.rendimentoTotal,
+    )
+  })
+
+  it('um mês caro de mais entra em défice sem contaminar os outros', () => {
+    const orcamento = b({ gastos: [gasto('2026-09-09', 200000)] })
+    expect(compute(orcamento, '2026-09').emDefice).toBe(true)
+    expect(compute(orcamento, '2026-10').emDefice).toBe(false)
+    expect(compute(orcamento, '2026-10').gastos).toBe(0)
+  })
+
+  it('sem gastos nenhuns, a conta é exatamente a de antes', () => {
+    const r = compute(b(), '2026-09')
+    expect(r.gastos).toBe(0)
+    expect(r.sobras).toBe(240000 - 120000 - 24000 - 24000)
   })
 })

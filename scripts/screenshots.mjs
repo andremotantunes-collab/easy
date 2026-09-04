@@ -15,38 +15,114 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const fase = process.argv[2] ?? '7'
 const base = process.argv[3] ?? 'http://localhost:5173'
+/** `npm run shots -- 9 http://... max` captura no iPhone 13 Pro Max. */
+const ECRA =
+  process.argv[4] === 'max'
+    ? { width: 430, height: 932, nome: '430x932' }
+    : { width: 390, height: 844, nome: '390x844' }
 const OUT = join(root, 'preview')
 mkdirSync(OUT, { recursive: true })
 
 // 2 400 € a month, preset Equilibrado, and six realistic standing costs.
+const AGORA = new Date()
+const MES_CORRENTE = `${AGORA.getFullYear()}-${String(AGORA.getMonth() + 1).padStart(2, '0')}`
+
+/**
+ * Gastos com forma: mais ao fim de semana, menos a meio da semana, e uns
+ * meses atras para o grafico de 12 meses ter linha. Sao inventados, mas com
+ * ritmo — uma serie plana nao mostra se o grafico funciona.
+ */
+const GASTOS = (() => {
+  const fora = []
+  const rotulos = [
+    ['Jantar', 'alimentacao', 2400],
+    ['Supermercado', 'alimentacao', 5200],
+    ['Cafe', 'alimentacao', 180],
+    ['Gasolina', 'transportes', 6500],
+    ['Farmacia', 'saude', 1450],
+    ['Cinema', 'lazer', 1700],
+    ['Livro', 'lazer', 2200],
+    ['Uber', 'transportes', 850],
+  ]
+  let semente = 7
+  const aleatorio = () => (semente = (semente * 1103515245 + 12345) % 2147483648) / 2147483648
+  for (let atras = 0; atras < 400; atras++) {
+    const d = new Date(AGORA.getFullYear(), AGORA.getMonth(), AGORA.getDate() - atras)
+    const fimDeSemana = d.getDay() === 0 || d.getDay() === 6
+    const quantos = aleatorio() < (fimDeSemana ? 0.85 : 0.45) ? (fimDeSemana ? 2 : 1) : 0
+    for (let i = 0; i < quantos; i++) {
+      const [nome, categoria, base] = rotulos[Math.floor(aleatorio() * rotulos.length)]
+      fora.push({
+        id: `g${atras}-${i}`,
+        descricao: nome,
+        valor: Math.round(base * (0.6 + aleatorio() * 0.9)),
+        categoria,
+        data: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+      })
+    }
+  }
+  return fora
+})()
+
 const BUDGET = {
-  version: 1,
+  version: 4,
   budget: {
     rendimentoMensal: 240000,
     extras: 0,
     modoDespesas: 'lista',
     despesasPercentagem: 50,
     despesasFixas: [
-      { id: 'f1', nome: 'Renda', valor: 75000, categoria: 'casa', ativo: true },
-      { id: 'f2', nome: 'Carro', valor: 18000, categoria: 'transportes', ativo: true },
-      { id: 'f3', nome: 'Ginásio', valor: 4000, categoria: 'saude', ativo: true },
-      { id: 'f4', nome: 'Telecomunicações', valor: 4500, categoria: 'subscricoes', ativo: true },
-      { id: 'f5', nome: 'Subscrições', valor: 2500, categoria: 'subscricoes', ativo: true },
-      { id: 'f6', nome: 'Seguros', valor: 6000, categoria: 'outros', ativo: true },
+      { id: 'f1', nome: 'Renda', valor: 75000, categoria: 'casa', periodicidade: 'mensal', ativo: true },
+      { id: 'f2', nome: 'Carro', valor: 18000, categoria: 'transportes', periodicidade: 'mensal', ativo: true },
+      { id: 'f3', nome: 'Ginásio', valor: 4000, categoria: 'saude', periodicidade: 'mensal', ativo: true },
+      { id: 'f4', nome: 'Telecomunicações', valor: 4500, categoria: 'subscricoes', periodicidade: 'mensal', ativo: true },
+      { id: 'f5', nome: 'Subscrições', valor: 2500, categoria: 'subscricoes', periodicidade: 'mensal', ativo: true },
+      { id: 'f6', nome: 'Seguros', valor: 6000, categoria: 'outros', periodicidade: 'mensal', ativo: true },
+      // Yearly on purpose: it is what shows the 240,00 €/ano -> 20,00 €/mes split.
+      { id: 'f7', nome: 'IUC', valor: 24000, categoria: 'transportes', periodicidade: 'anual', ativo: true },
     ],
+    // Gastos espalhados por varios dias e meses: e' o que da' uma linha com
+    // forma no grafico, em vez de um degrau.
+    gastos: GASTOS,
+    limites: { alimentacao: 30000 },
     alocacao: { investimentos: 10, poupanca: 10 },
-    diaDeRecebimento: 28,
     poupancaAcumulada: 264000, // 2,4 meses de despesas fixas
     taxaAnualEsperada: 5,
+    modoDiscreto: false,
   },
+}
+
+/**
+ * Quatro meses ja' fechados, com contas diferentes uns dos outros: um deles
+ * com um custo que so' ele teve. Sem historico, a fita de meses e o ecra de
+ * Todos os meses nao teriam nada para mostrar, e as capturas nao diriam se o
+ * desenho funciona.
+ */
+function mesesAtras(n) {
+  const d = new Date(AGORA.getFullYear(), AGORA.getMonth() - n, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+const HISTORICO = {
+  mesAberto: MES_CORRENTE,
+  meses: [
+    { mes: mesesAtras(4), rendimentoTotal: 230000, despesasFixas: 112000, gastos: 0, investimentos: 23000, poupanca: 23000, sobras: 72000, fechadoEm: `${mesesAtras(3)}-02T09:12:00.000Z` },
+    { mes: mesesAtras(3), rendimentoTotal: 240000, despesasFixas: 112000, gastos: 48000, investimentos: 24000, poupanca: 24000, sobras: 32000, fechadoEm: `${mesesAtras(2)}-01T20:40:00.000Z` },
+    { mes: mesesAtras(2), rendimentoTotal: 240000, despesasFixas: 112000, gastos: 0, investimentos: 24000, poupanca: 24000, sobras: 80000, fechadoEm: `${mesesAtras(1)}-03T08:05:00.000Z` },
+    { mes: mesesAtras(1), rendimentoTotal: 258000, despesasFixas: 112000, gastos: 9500, investimentos: 25800, poupanca: 25800, sobras: 84900, fechadoEm: `${MES_CORRENTE}-01T19:30:00.000Z` },
+  ],
 }
 
 const SCREENS = [
   { slug: 'inicio', path: '/', nome: 'Início' },
+  { slug: 'documentos', path: '/documentos', nome: 'Documentos' },
+  { slug: 'perfil', path: '/perfil', nome: 'Perfil' },
+  { slug: 'dados-pessoais', path: '/perfil/dados', nome: 'Dados pessoais' },
   { slug: 'plano', path: '/plano', nome: 'Plano' },
   { slug: 'fixas', path: '/fixas', nome: 'Despesas fixas' },
+  { slug: 'gastos', path: '/gastos', nome: 'Gastos' },
+  { slug: 'meses', path: '/meses', nome: 'Todos os meses' },
   { slug: 'investir', path: '/investir', nome: 'Investir' },
-  { slug: 'documentos', path: '/documentos', nome: 'Documentos' },
 ]
 
 /** A tiny but structurally valid PDF, so the preview sheet has one to open. */
@@ -93,7 +169,7 @@ const shots = []
 try {
   for (const modo of ['claro', 'escuro']) {
     const context = await browser.newContext({
-      viewport: { width: 390, height: 844 },
+      viewport: { width: ECRA.width, height: ECRA.height },
       deviceScaleFactor: 2,
       isMobile: true,
       hasTouch: true,
@@ -104,13 +180,14 @@ try {
 
     // Seed before any script on the page runs.
     await context.addInitScript(
-      ([budget, tema]) => {
+      ([budget, historico, tema]) => {
         localStorage.setItem('easy.budget.v1', JSON.stringify(budget))
+        localStorage.setItem('easy.historico.v1', JSON.stringify(historico))
         localStorage.setItem('easy.onboarded.v1', '1')
         if (tema) localStorage.setItem('easy.theme.v1', tema)
         else localStorage.removeItem('easy.theme.v1')
       },
-      [BUDGET, modo === 'escuro' ? 'dark' : 'light'],
+      [BUDGET, HISTORICO, modo === 'escuro' ? 'dark' : 'light'],
     )
 
     const page = await context.newPage()
@@ -153,14 +230,14 @@ try {
     await page.addStyleTag({ content: FLOW_TABBAR })
     const defFile = join(OUT, `definicoes-${modo}.png`)
     await page.screenshot({ path: defFile, fullPage: true })
-    shots.push({ slug: 'definicoes', nome: 'Definições', modo, file: defFile })
+    shots.push({ slug: 'definicoes', nome: 'Os teus dados', modo, file: defFile })
 
     // The deficit state: same income, commitments deliberately over 100%.
     const defice = await context.newPage()
     await defice.addInitScript((budget) => {
       localStorage.setItem('easy.budget.v1', JSON.stringify(budget))
     }, {
-      version: 1,
+      version: 2,
       budget: {
         ...BUDGET.budget,
         modoDespesas: 'percentagem',
@@ -180,7 +257,7 @@ try {
   }
 
   // ---- contact sheet -------------------------------------------------------
-  const order = ['onboarding', 'inicio', 'defice', 'plano', 'fixas', 'investir', 'documentos', 'definicoes']
+  const order = ['onboarding', 'inicio', 'defice', 'documentos', 'perfil', 'dados-pessoais', 'plano', 'fixas', 'investir', 'definicoes']
   const byMode = (modo) =>
     order
       .map((slug) => shots.find((s) => s.slug === slug && s.modo === modo))

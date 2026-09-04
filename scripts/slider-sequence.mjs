@@ -16,7 +16,7 @@ mkdirSync(OUT, { recursive: true })
 mkdirSync(join(root, '.tmp', 'frames'), { recursive: true })
 
 const BUDGET = {
-  version: 1,
+  version: 2,
   budget: {
     rendimentoMensal: 240000,
     extras: 0,
@@ -24,9 +24,9 @@ const BUDGET = {
     despesasPercentagem: 50,
     despesasFixas: [],
     alocacao: { investimentos: 5, poupanca: 10 },
-    diaDeRecebimento: 28,
     poupancaAcumulada: 264000,
     taxaAnualEsperada: 5,
+    modoDiscreto: false,
   },
 }
 

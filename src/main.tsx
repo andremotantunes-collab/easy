@@ -10,7 +10,9 @@ initTheme()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    {/* O prefixo vem da build: '/' em casa, '/easy/' no GitHub Pages. Sem
+        isto, todas as rotas apontavam para a raiz do dominio. */}
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <App />
     </BrowserRouter>
   </StrictMode>,

@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Download, FileImage, FileSpreadsheet, FileText, File as FileIcon, Plus, Trash2,
 } from 'lucide-react'
 import { Screen } from '../components/Layout'
-import { Card, GhostButton, Label, PrimaryButton, Sheet, UndoToast } from '../components/ui'
-import { addFiles, getBlob, listDocs, removeDoc, restoreDoc, TAGS } from '../lib/docs'
-import type { Doc, DocTag } from '../lib/types'
+import { Card, GhostButton, Group, PrimaryButton, Sheet, UndoToast } from '../components/ui'
+import { addFiles, getBlob, listDocs, removeDoc, restoreDoc } from '../lib/docs'
+import type { Doc } from '../lib/types'
 import { formatBytes, formatDate } from '../lib/format'
 import { copy } from '../lib/copy'
 import { createZip, safeFileName } from '../lib/zip'
@@ -31,7 +31,6 @@ function saveBlob(blob: Blob, filename: string) {
 
 export function Documentos() {
   const [docs, setDocs] = useState<Doc[]>([])
-  const [filtro, setFiltro] = useState<DocTag | 'todos'>('todos')
   const [preview, setPreview] = useState<{ doc: Doc; url: string; blob: Blob } | null>(null)
   const [undo, setUndo] = useState<{ doc: Doc; blob: Blob; index: number } | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -43,11 +42,6 @@ export function Documentos() {
   useEffect(() => {
     void refresh()
   }, [refresh])
-
-  const visiveis = useMemo(
-    () => (filtro === 'todos' ? docs : docs.filter((d) => d.tags.includes(filtro))),
-    [docs, filtro],
-  )
 
   const onFiles = async (files: FileList | File[] | null) => {
     if (!files) return
@@ -100,18 +94,18 @@ export function Documentos() {
   const isPdf = preview?.doc.tipo === 'application/pdf'
 
   return (
-    <Screen title={copy.documentos.titulo}>
-      <div className="mb-3 flex items-center justify-between">
-        <Label>{copy.documentos.titulo}</Label>
+    <Screen
+      title={copy.documentos.titulo}
+      right={
         <button
           onClick={() => inputRef.current?.click()}
           aria-label={copy.documentos.adicionar}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-text)]"
+          className="-mr-1 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-text)] active:opacity-80"
         >
           <Plus size={20} strokeWidth={2.2} aria-hidden />
         </button>
-      </div>
-
+      }
+    >
       <input
         ref={inputRef}
         type="file"
@@ -122,27 +116,6 @@ export function Documentos() {
           e.target.value = ''
         }}
       />
-
-      {/* Tag filters */}
-      <div className="-mx-5 mb-3 overflow-x-auto px-5">
-        <div className="flex w-max gap-2">
-          {(['todos', ...TAGS] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setFiltro(t)}
-              aria-pressed={filtro === t}
-              className={
-                'min-h-[44px] whitespace-nowrap rounded-full border px-4 text-sm transition-opacity duration-150 ' +
-                (filtro === t
-                  ? 'border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text)]'
-                  : 'border-[var(--border)] text-[var(--text)]')
-              }
-            >
-              {t === 'todos' ? copy.documentos.todos : copy.tags[t]}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <div
         onDragOver={(e) => {
@@ -158,7 +131,7 @@ export function Documentos() {
         className="rounded-[var(--radius)]"
         style={dragging ? { outline: '2px dashed var(--accent)', outlineOffset: 4 } : undefined}
       >
-        {visiveis.length === 0 ? (
+        {docs.length === 0 ? (
           <Card className="text-center">
             <p className="t-value">
               {dragging ? copy.documentos.largar : copy.documentos.vazioTitulo}
@@ -169,29 +142,44 @@ export function Documentos() {
             </GhostButton>
           </Card>
         ) : (
-          <ul className="grid grid-cols-2 gap-3">
-            {visiveis.map((doc) => {
-              const Icon = iconFor(doc.tipo)
-              return (
-                <Card as="li" key={doc.id} className="!p-3">
-                  <button onClick={() => void abrir(doc)} className="w-full text-left">
-                    <Icon size={22} strokeWidth={1.6} aria-hidden className="text-[var(--text-muted)]" />
-                    <p className="t-body mt-2 line-clamp-2 break-words">{doc.nome}</p>
-                    <p className="t-note tnum mt-1 text-[var(--text-muted)]">
-                      {formatBytes(doc.tamanho)} · {formatDate(new Date(doc.criadoEm))}
-                    </p>
-                  </button>
-                  <button
-                    onClick={() => void apagar(doc)}
-                    aria-label={`${copy.documentos.apagar} ${doc.nome}`}
-                    className="mt-2 flex h-11 w-11 items-center justify-center text-[var(--text-muted)]"
+          <Group>
+            <ul>
+              {docs.map((doc) => {
+                const Icon = iconFor(doc.tipo)
+                return (
+                  <li
+                    key={doc.id}
+                    className="flex items-center border-b border-[var(--border)] last:border-b-0"
                   >
-                    <Trash2 size={16} strokeWidth={1.8} aria-hidden />
-                  </button>
-                </Card>
-              )
-            })}
-          </ul>
+                    <button
+                      onClick={() => void abrir(doc)}
+                      className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left active:opacity-60"
+                    >
+                      <Icon
+                        size={22}
+                        strokeWidth={1.6}
+                        aria-hidden
+                        className="shrink-0 text-[var(--text-muted)]"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="t-body block truncate">{doc.nome}</span>
+                        <span className="t-note tnum block text-[var(--text-muted)]">
+                          {formatBytes(doc.tamanho)} · {formatDate(new Date(doc.criadoEm))}
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => void apagar(doc)}
+                      aria-label={`${copy.documentos.apagar} ${doc.nome}`}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center text-[var(--text-muted)] active:opacity-60"
+                    >
+                      <Trash2 size={17} strokeWidth={1.8} aria-hidden />
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </Group>
         )}
       </div>
 
@@ -214,13 +202,13 @@ export function Documentos() {
               <img
                 src={preview.url}
                 alt={preview.doc.nome}
-                className="max-h-[50vh] w-full rounded-[var(--radius-sm)] object-contain"
+                className="max-h-[50dvh] w-full rounded-[var(--radius-sm)] object-contain"
               />
             ) : isPdf ? (
               <object
                 data={preview.url}
                 type="application/pdf"
-                className="h-[50vh] w-full rounded-[var(--radius-sm)]"
+                className="h-[50dvh] w-full rounded-[var(--radius-sm)]"
                 aria-label={preview.doc.nome}
               >
                 <p className="t-note text-[var(--text-muted)]">

@@ -2,11 +2,14 @@
  * The calculation engine. Pure functions, integer cents in and out.
  * Nothing here touches React, storage or the DOM.
  */
-import type { Budget, Money } from './types'
+import { mesDe } from './format'
+import type { Budget, FixedExpense, Money } from './types'
 
 export type Breakdown = {
   rendimentoTotal: Money
   despesasFixas: Money
+  /** O que se gastou neste mes, dia a dia. */
+  gastos: Money
   investimentos: Money
   poupanca: Money
   /** "O bolo" - what is genuinely free to spend. May be negative. */
@@ -19,27 +22,50 @@ function pct(amount: Money, percentage: number): Money {
   return Math.round((amount * percentage) / 100)
 }
 
+/**
+ * What one expense costs in a month. A yearly charge is spread over twelve,
+ * rounded to the cent, because the whole product thinks in months.
+ */
+export function mensalizado(e: FixedExpense): Money {
+  return e.periodicidade === 'anual' ? Math.round(e.valor / 12) : e.valor
+}
+
 export function totalFixas(budget: Budget, rendimentoTotal: Money): Money {
   return budget.modoDespesas === 'lista'
-    ? budget.despesasFixas.reduce((sum, e) => (e.ativo ? sum + e.valor : sum), 0)
+    ? budget.despesasFixas.reduce((sum, e) => (e.ativo ? sum + mensalizado(e) : sum), 0)
     : pct(rendimentoTotal, budget.despesasPercentagem)
+}
+
+/** O que se gastou num mes. O mes de um gasto sai do dia dele. */
+export function gastosDe(budget: Budget, mes: string): Money {
+  return budget.gastos.reduce((soma, g) => (g.data.slice(0, 7) === mes ? soma + g.valor : soma), 0)
 }
 
 /**
  * The order of operations is fixed by the spec:
- *   total -> fixas -> investimentos -> poupanca -> sobras (the remainder).
+ *   total -> fixas -> gastos -> investimentos -> poupanca -> sobras.
  * Because sobras is computed as a remainder rather than rounded on its own,
- * the four slices always add back up to the total, to the cent.
+ * the slices always add back up to the total, to the cent.
+ *
+ * Os gastos entram DEPOIS das fixas e ANTES do que sobra, mas nao mexem no que
+ * se investe nem no que se poupa: um jantar de 19,90 euros nao e' motivo para
+ * deixar de investir — e' menos 19,90 para gastar. Quem quiser o contrario
+ * mexe no plano, que e' uma decisao e nao um acidente.
+ *
+ * E' isto que faz o bolo descer a cada gasto registado: as sobras sao o resto,
+ * e o resto encolhe.
  */
-export function compute(budget: Budget): Breakdown {
+export function compute(budget: Budget, mes: string = mesDe(new Date())): Breakdown {
   const rendimentoTotal = budget.rendimentoMensal + budget.extras
   const despesasFixas = totalFixas(budget, rendimentoTotal)
+  const gastos = gastosDe(budget, mes)
   const investimentos = pct(rendimentoTotal, budget.alocacao.investimentos)
   const poupanca = pct(rendimentoTotal, budget.alocacao.poupanca)
-  const sobras = rendimentoTotal - despesasFixas - investimentos - poupanca
+  const sobras = rendimentoTotal - despesasFixas - gastos - investimentos - poupanca
   return {
     rendimentoTotal,
     despesasFixas,
+    gastos,
     investimentos,
     poupanca,
     sobras,
@@ -48,44 +74,14 @@ export function compute(budget: Budget): Breakdown {
 }
 
 // ---------------------------------------------------------------------------
-// Dates
-// ---------------------------------------------------------------------------
-
-/** The next date on which money lands, given a payday between 1 and 28. */
-export function proximoRecebimento(hoje: Date, diaDeRecebimento: number): Date {
-  const dia = Math.min(28, Math.max(1, Math.round(diaDeRecebimento)))
-  const d = new Date(hoje.getFullYear(), hoje.getMonth(), dia)
-  // On payday itself the whole next cycle is ahead of you, so roll forward.
-  if (d.getTime() <= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime()) {
-    d.setMonth(d.getMonth() + 1)
-  }
-  return d
-}
-
-const DIA_MS = 24 * 60 * 60 * 1000
-
-/** Whole days between today and the next payday. Never below 1. */
-export function diasAteProximoRecebimento(hoje: Date, diaDeRecebimento: number): number {
-  const alvo = proximoRecebimento(hoje, diaDeRecebimento)
-  const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
-  // Round rather than floor: DST shifts make the raw difference 23h or 25h.
-  return Math.max(1, Math.round((alvo.getTime() - inicio.getTime()) / DIA_MS))
-}
-
-// ---------------------------------------------------------------------------
-// The six metrics
+// Metrics
 // ---------------------------------------------------------------------------
 
 export type SavingsRateLevel = 'bom' | 'medio' | 'baixo'
 
-export function porDia(sobras: Money, dias: number): Money {
-  if (dias <= 0) return 0
-  return Math.round(sobras / dias)
-}
-
+/** How much of what comes in is kept: invested plus saved. */
 export function taxaPoupanca(b: Breakdown): number {
-  if (b.rendimentoTotal <= 0) return 0
-  return (b.investimentos + b.poupanca) / b.rendimentoTotal
+  return b.rendimentoTotal > 0 ? (b.investimentos + b.poupanca) / b.rendimentoTotal : 0
 }
 
 export function nivelTaxaPoupanca(taxa: number): SavingsRateLevel {
@@ -94,12 +90,11 @@ export function nivelTaxaPoupanca(taxa: number): SavingsRateLevel {
   return 'baixo'
 }
 
+/** Fixed expenses as a share of income. Over half is the line worth flagging. */
 export function pesoDespesasFixas(b: Breakdown): number {
-  if (b.rendimentoTotal <= 0) return 0
-  return b.despesasFixas / b.rendimentoTotal
+  return b.rendimentoTotal > 0 ? b.despesasFixas / b.rendimentoTotal : 0
 }
 
-/** Months of fixed costs already covered by accumulated savings. */
 export function fundoEmergenciaMeses(poupancaAcumulada: Money, despesasFixas: Money): number {
   if (despesasFixas <= 0) return 0
   return poupancaAcumulada / despesasFixas
@@ -108,10 +103,6 @@ export function fundoEmergenciaMeses(poupancaAcumulada: Money, despesasFixas: Mo
 export const META_FUNDO_MESES = 6
 
 /** What a year of living exactly like this costs. */
-export function custoVidaAnual(b: Breakdown): Money {
-  return (b.despesasFixas + b.sobras) * 12
-}
-
 export type Projection = {
   total: Money
   capital: Money

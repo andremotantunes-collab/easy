@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { ChevronRight } from 'lucide-react'
 
 export function Card({
   children,
@@ -15,8 +16,8 @@ export function Card({
   return (
     <Tag
       className={clsx(
-        'rounded-[var(--radius)] bg-[var(--surface)] p-4',
-        'border border-[var(--card-border)]',
+        'entra rounded-[var(--radius)] bg-[var(--surface)] p-4',
+        'border border-[var(--card-border)] shadow-[var(--shadow-card)]',
         className,
       )}
       {...rest}
@@ -30,14 +31,17 @@ export function Label({ children, className }: { children: ReactNode; className?
   return <div className={clsx('t-label', className)}>{children}</div>
 }
 
-/** A thin 0–max bar. Used by the stat tiles; never the only carrier of meaning. */
+/** A thin 0–max bar. Never the only carrier of meaning. */
 export function Bar({
   ratio,
   color = 'var(--accent)',
+  color2,
   className,
 }: {
   ratio: number
   color?: string
+  /** Second stop: the bar blends along its length, like a slice of the ring. */
+  color2?: string
   className?: string
 }) {
   const pct = Math.max(0, Math.min(1, ratio)) * 100
@@ -47,17 +51,23 @@ export function Bar({
     >
       <div
         className="h-full rounded-full"
-        style={{ width: `${pct}%`, background: color, transition: 'width 180ms ease-out' }}
+        style={{
+          width: `${pct}%`,
+          background: color2 ? `linear-gradient(90deg, ${color}, ${color2})` : color,
+          transition: 'width 300ms ease-out',
+        }}
       />
     </div>
   )
 }
 
+/** One metric: label, value in its own colour, bar, and a short read of it. */
 export function StatTile({
   label,
   value,
   ratio,
   color,
+  color2,
   phrase,
   onClick,
 }: {
@@ -65,6 +75,7 @@ export function StatTile({
   value: string
   ratio: number
   color: string
+  color2?: string
   phrase: string
   onClick?: () => void
 }) {
@@ -73,25 +84,36 @@ export function StatTile({
     <Wrapper
       onClick={onClick}
       className={clsx(
-        'flex min-h-[44px] flex-1 flex-col gap-2 rounded-[var(--radius)] bg-[var(--surface)] p-4 text-left',
-        'border border-[var(--card-border)]',
+        'entra flex w-full flex-col gap-2.5 rounded-[var(--radius)] p-4 text-left',
+        'bg-[var(--surface)] border border-[var(--card-border)] shadow-[var(--shadow-card)]',
+        onClick ? 'transition-opacity duration-150 active:opacity-60' : '',
       )}
+      style={{
+        // A wash of the metric's own colour, coming in from the top left and
+        // gone by two thirds. Where color-mix is not understood the whole
+        // declaration is dropped and the plain surface stays — which is why
+        // the surface is still a class and not part of this gradient.
+        backgroundImage: `linear-gradient(152deg, color-mix(in srgb, ${color} 13%, transparent) 0%, transparent 66%)`,
+      }}
     >
       <Label>{label}</Label>
-      <div className="t-value tnum" style={{ color }}>
+      <div
+        className="tnum leading-none"
+        style={{ color, fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.03em' }}
+      >
         {value}
       </div>
-      <Bar ratio={ratio} color={color} />
+      <Bar ratio={ratio} color={color} color2={color2} />
       <div className="t-note text-[var(--text-muted)]">{phrase}</div>
     </Wrapper>
   )
 }
 
 /**
- * Counts from the previous value to the next one over ~220ms. The only
- * animation in the product besides the donut sweep and 150–200ms fades.
+ * Counts from the previous value to the next one over ~450ms. The hero is the
+ * one number that earns an animation: it is what you came to see.
  */
-export function useCountUp(value: number, duration = 220): number {
+export function useCountUp(value: number, duration = 450): number {
   const [shown, setShown] = useState(value)
   const from = useRef(value)
   const raf = useRef(0)
@@ -118,6 +140,100 @@ export function useCountUp(value: number, duration = 220): number {
   }, [shown])
 
   return shown
+}
+
+/**
+ * A grouped list, iOS-style: one rounded surface, hairlines between rows.
+ * The rows carry the whole of Perfil, so they are 56px tall and the entire
+ * row is the target.
+ */
+export function Group({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={clsx(
+        'entra overflow-hidden rounded-[var(--radius)] bg-[var(--surface)]',
+        'border border-[var(--card-border)] shadow-[var(--shadow-card)]',
+        // The separator starts where the text starts, and the last row has
+        // none: the card edge already ends the list.
+        '[&>*:last-child_.sep]:border-b-0',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function NavRow({
+  label,
+  value,
+  onClick,
+}: {
+  label: string
+  value?: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center pl-4 text-left transition-opacity duration-150 active:opacity-60"
+    >
+      <span className="sep flex min-h-[56px] flex-1 items-center gap-3 border-b border-[var(--border)] pr-4">
+        <span className="t-body flex-1 truncate">{label}</span>
+        {value ? (
+          <span className="t-body tnum shrink-0 text-[var(--text-muted)]">{value}</span>
+        ) : null}
+        <ChevronRight
+          size={19}
+          strokeWidth={2}
+          className="-mr-1 shrink-0 text-[var(--text-muted)] opacity-60"
+          aria-hidden
+        />
+      </span>
+    </button>
+  )
+}
+
+/** The same 36×20 switch the expense rows use, as a list row. */
+export function SwitchRow({
+  label,
+  help,
+  checked,
+  onChange,
+}: {
+  label: string
+  help?: string
+  checked: boolean
+  onChange: () => void
+}) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      className="flex w-full items-center pl-4 text-left transition-opacity duration-150 active:opacity-60"
+    >
+      <span className="sep flex min-h-[64px] flex-1 items-center gap-3 border-b border-[var(--border)] py-2 pr-4">
+      <span className="min-w-0 flex-1">
+        <span className="t-body block">{label}</span>
+        {help ? <span className="t-note block text-[var(--text-muted)]">{help}</span> : null}
+      </span>
+      <span
+        className="h-5 w-9 shrink-0 rounded-full p-[2px]"
+        style={{ background: checked ? 'var(--accent)' : 'var(--surface-2)' }}
+        aria-hidden
+      >
+        <span
+          className="block h-4 w-4 rounded-full bg-white shadow-[var(--shadow-pill)]"
+          style={{
+            transform: checked ? 'translateX(16px)' : 'translateX(0)',
+            transition: 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+          }}
+        />
+      </span>
+      </span>
+    </button>
+  )
 }
 
 /** Bottom sheet. Traps nothing fancy — Esc closes, backdrop closes. */
@@ -151,7 +267,7 @@ export function Sheet({
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div
         className="absolute inset-0 bg-black/40"
-        style={{ animation: 'none' }}
+        style={{ animation: 'aparecer 200ms ease-out' }}
         onClick={onClose}
         aria-hidden
       />
@@ -159,10 +275,13 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-[440px] rounded-t-[20px] bg-[var(--bg)] p-5"
-        style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}
+        className="relative w-full max-w-[440px] rounded-t-[28px] bg-[var(--bg)] p-5"
+        style={{
+          paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
+          animation: 'subir 260ms cubic-bezier(0.2, 0, 0, 1)',
+        }}
       >
-        <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-[var(--surface-2)]" />
+        <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-[var(--border)]" />
         <h2 className="t-title mb-4">{title}</h2>
         {children}
       </div>
@@ -213,9 +332,9 @@ export function PrimaryButton({
   return (
     <button
       className={clsx(
-        'min-h-[52px] w-full rounded-[var(--radius-sm)] bg-[var(--accent)] px-5',
+        'min-h-[52px] w-full rounded-[var(--radius)] bg-[var(--accent)] px-5',
         'text-base font-semibold text-[var(--accent-text)]',
-        'transition-opacity duration-150 active:opacity-80 disabled:opacity-40',
+        'transition-[transform,opacity] duration-200 active:translate-y-px disabled:opacity-40',
         className,
       )}
       {...rest}
@@ -233,9 +352,10 @@ export function GhostButton({
   return (
     <button
       className={clsx(
-        'min-h-[52px] w-full rounded-[var(--radius-sm)] border border-[var(--border)] px-5',
-        'text-base font-medium text-[var(--text)]',
-        'transition-opacity duration-150 active:opacity-70',
+        'min-h-[52px] w-full rounded-[var(--radius)] px-5',
+        'border-[1.5px] border-[var(--border)] bg-transparent',
+        'text-base font-semibold text-[var(--accent)]',
+        'transition-[transform,background-color] duration-200 active:translate-y-px active:bg-[var(--surface-2)]',
         className,
       )}
       {...rest}

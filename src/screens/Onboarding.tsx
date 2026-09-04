@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import { MoneyInput } from '../components/MoneyInput'
 import { Card, PrimaryButton } from '../components/ui'
+import { Logo } from '../components/Logo'
 import { useBudget } from '../store/budget'
 import { setOnboarded } from '../lib/storage'
 import { PRESETS, copy } from '../lib/copy'
@@ -39,7 +40,10 @@ export function Onboarding() {
       }}
     >
       <header className="flex items-center justify-between py-2">
-        <span className="text-[17px] font-semibold tracking-tight">{copy.brand}</span>
+        <span className="flex items-center gap-2.5">
+          <Logo size={30} />
+          <span className="text-[1.25rem] font-bold tracking-[-0.025em]">{copy.brand}</span>
+        </span>
         <button onClick={saltar} className="min-h-[44px] px-2 text-sm text-[var(--text-muted)]">
           {copy.onboarding.saltar}
         </button>

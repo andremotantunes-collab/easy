@@ -2,14 +2,40 @@
 <html lang="pt-PT">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5"
     />
-    <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0B0B0C" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#F6F8FC" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#07070E" media="(prefers-color-scheme: dark)" />
+    <script>
+      /* Corre antes do primeiro pixel, e por isso e' que esta' aqui em vez de
+         estar no pacote: um tema escolhido a' mao so' era aplicado quando o
+         JavaScript da app chegava, e ate' la' o ecra ficava com o tema do
+         sistema — que pode ser o oposto. A troca a meio do arranque era a
+         coisa mais visivel que a app fazia ao abrir.
+
+         As duas cores sao as mesmas de --bg em tokens.css. O <meta> entra a'
+         frente dos outros porque o browser fica pelo primeiro que combina. */
+      ;(function () {
+        try {
+          var escolha = localStorage.getItem('easy.theme.v1')
+          if (escolha !== 'light' && escolha !== 'dark') return
+          document.documentElement.setAttribute('data-theme', escolha)
+          var meta = document.createElement('meta')
+          meta.name = 'theme-color'
+          /* A mesma marca que o theme.ts procura, para o depois substituir em
+             vez de deixar dois. */
+          meta.setAttribute('data-easy-barra', '')
+          meta.content = escolha === 'dark' ? '#07070E' : '#F6F8FC'
+          document.head.insertBefore(meta, document.head.firstChild)
+        } catch (e) {
+          /* Modo privado: fica o tema do sistema, que e' o que ja' acontecia. */
+        }
+      })()
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Easy." />
     <meta name="description" content="Easy. — quanto tens, mesmo, para gastar este mês." />

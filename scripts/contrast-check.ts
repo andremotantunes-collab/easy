@@ -73,6 +73,38 @@ const systemDark = parse(block(':root:not([data-theme="light"])'))
 
 type Check = { name: string; fg: string; bg: string; min: number }
 
+/**
+ * The light field behind the app tints the page background, and the token pairs
+ * above never see that: they compare text against the *untinted* --bg. This
+ * composites each aurora colour over --bg at the configured opacity, in the
+ * blend mode the theme uses, and returns the worst ground the text can land on.
+ * It is the check that catches "passes on paper, fails on screen".
+ */
+function composite(base: string, blend: string, alpha: number, mode: 'multiply' | 'screen'): string {
+  const [br, bg, bb] = rgb(base)
+  const [sr, sg, sb] = rgb(blend)
+  const mix = (b: number, s: number) =>
+    mode === 'multiply' ? (b * s) / 255 : 255 - ((255 - b) * (255 - s)) / 255
+  const out = [
+    b_(br, mix(br, sr)), b_(bg, mix(bg, sg)), b_(bb, mix(bb, sb)),
+  ]
+  function b_(b: number, m: number) {
+    return Math.round(b * (1 - alpha) + m * alpha)
+  }
+  return '#' + out.map((v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('')
+}
+
+function auroraChecks(t: Tokens, alpha: number, mode: 'multiply' | 'screen'): Check[] {
+  const campos = ['--aurora-1', '--aurora-2', '--aurora-3']
+  return campos.flatMap((c) => {
+    const ground = composite(t['--bg'], t[c], alpha, mode)
+    return [
+      { name: `texto sobre ${c.slice(2)}`, fg: t['--text'], bg: ground, min: 7 },
+      { name: `texto 2.o sobre ${c.slice(2)}`, fg: t['--text-muted'], bg: ground, min: 4.5 },
+    ]
+  })
+}
+
 const checks = (t: Tokens): Check[] => [
   { name: 'texto principal / bg', fg: t['--text'], bg: t['--bg'], min: 7 },
   { name: 'texto principal / surface', fg: t['--text'], bg: t['--surface'], min: 7 },
@@ -84,10 +116,29 @@ const checks = (t: Tokens): Check[] => [
   { name: 'fatia Fixas / surface', fg: t['--cat-fixas'], bg: t['--surface'], min: 3 },
   { name: 'fatia Investimentos / surface', fg: t['--cat-invest'], bg: t['--surface'], min: 3 },
   { name: 'fatia Poupança / surface', fg: t['--cat-poupanca'], bg: t['--surface'], min: 3 },
+  { name: 'fatia Custos do mês / surface', fg: t['--cat-custos'], bg: t['--surface'], min: 3 },
+  { name: 'Sobras 2.a paragem / surface', fg: t['--cat-sobras-2'], bg: t['--surface'], min: 3 },
+  { name: 'Fixas 2.a paragem / surface', fg: t['--cat-fixas-2'], bg: t['--surface'], min: 3 },
+  { name: 'Investimentos 2.a paragem / surface', fg: t['--cat-invest-2'], bg: t['--surface'], min: 3 },
+  { name: 'Poupança 2.a paragem / surface', fg: t['--cat-poupanca-2'], bg: t['--surface'], min: 3 },
+  { name: 'Custos 2.a paragem / surface', fg: t['--cat-custos-2'], bg: t['--surface'], min: 3 },
   { name: 'negativo / surface', fg: t['--negative'], bg: t['--surface'], min: 3 },
   { name: 'aviso / surface', fg: t['--warning'], bg: t['--surface'], min: 3 },
   { name: 'positivo / surface', fg: t['--positive'], bg: t['--surface'], min: 3 },
 ]
+
+/** Os tokens de opacidade e mistura nao sao cores, por isso o parser nao os
+ *  apanha: ficam aqui, e um desvio entre isto e o CSS aparece no ecra. */
+const AURORA_ALPHA: Record<string, number> = {
+  claro: 0.36,
+  'escuro (toggle)': 0.46,
+  'escuro (sistema)': 0.46,
+}
+const AURORA_MODE: Record<string, 'multiply' | 'screen'> = {
+  claro: 'multiply',
+  'escuro (toggle)': 'screen',
+  'escuro (sistema)': 'screen',
+}
 
 let failed = 0
 for (const [modo, tokens] of [

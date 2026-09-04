@@ -4,9 +4,12 @@ import { Screen } from '../components/Layout'
 import { Card, GhostButton, Label, PrimaryButton, Sheet, UndoToast } from '../components/ui'
 import { MoneyInput } from '../components/MoneyInput'
 import { useBudget } from '../store/budget'
-import { formatEUR } from '../lib/format'
+import { mensalizado } from '../lib/finance'
+import { useEUR } from '../lib/money'
 import { copy } from '../lib/copy'
 import type { FixedCategory, FixedExpense } from '../lib/types'
+
+type Periodicidade = FixedExpense['periodicidade']
 
 const CATEGORIAS: FixedCategory[] = [
   'casa', 'transportes', 'subscricoes', 'saude', 'creditos', 'outros',
@@ -17,16 +20,19 @@ function SwipeRow({
   expense,
   onToggle,
   onDelete,
+  eur,
 }: {
   expense: FixedExpense
   onToggle: () => void
   onDelete: () => void
+  eur: (cents: number, opts?: { cents?: boolean }) => string
 }) {
   const [dx, setDx] = useState(0)
   const startX = useRef(0)
   const dragging = useRef(false)
 
   const THRESHOLD = 96
+  const anual = expense.periodicidade === 'anual'
 
   return (
     <li className="relative overflow-hidden border-b border-[var(--border)] last:border-b-0">
@@ -81,10 +87,17 @@ function SwipeRow({
             {expense.nome}
           </span>
           <span
-            className="t-body tnum font-semibold"
+            className="shrink-0 text-right"
             style={{ opacity: expense.ativo ? 1 : 0.45 }}
           >
-            {formatEUR(expense.valor)}
+            <span className="t-body tnum block font-semibold">
+              {anual ? copy.fixas.porAno(eur(expense.valor)) : eur(expense.valor)}
+            </span>
+            {anual ? (
+              <span className="t-note tnum block text-[var(--text-muted)]">
+                {copy.fixas.porMes(eur(mensalizado(expense)))}
+              </span>
+            ) : null}
           </span>
         </button>
         <button
@@ -105,10 +118,14 @@ export function Fixas() {
   const [nome, setNome] = useState('')
   const [valor, setValor] = useState(0)
   const [categoria, setCategoria] = useState<FixedCategory>('casa')
+  const [periodicidade, setPeriodicidade] = useState<Periodicidade>('mensal')
   const [undo, setUndo] = useState<{ expense: FixedExpense; index: number } | null>(null)
 
+  const eur = useEUR()
+
+  // Always the monthly cost: a yearly charge counts as a twelfth.
   const total = useMemo(
-    () => budget.despesasFixas.reduce((s, e) => (e.ativo ? s + e.valor : s), 0),
+    () => budget.despesasFixas.reduce((s, e) => (e.ativo ? s + mensalizado(e) : s), 0),
     [budget.despesasFixas],
   )
 
@@ -124,10 +141,11 @@ export function Fixas() {
 
   const guardar = () => {
     if (!nome.trim() || valor <= 0) return
-    addFixa({ nome: nome.trim(), valor, categoria, ativo: true })
+    addFixa({ nome: nome.trim(), valor, periodicidade, categoria, ativo: true })
     setNome('')
     setValor(0)
     setCategoria('casa')
+    setPeriodicidade('mensal')
     setSheetOpen(false)
   }
 
@@ -138,17 +156,19 @@ export function Fixas() {
   }
 
   return (
-    <Screen title={copy.fixas.titulo}>
-      <div className="mb-3 flex items-center justify-end">
+    <Screen
+      title={copy.fixas.titulo}
+      back="/perfil"
+      right={
         <button
           onClick={() => setSheetOpen(true)}
           aria-label={copy.fixas.adicionar}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-text)]"
+          className="-mr-1 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-text)] active:opacity-80"
         >
           <Plus size={20} strokeWidth={2.2} aria-hidden />
         </button>
-      </div>
-
+      }
+    >
       {budget.modoDespesas === 'percentagem' ? (
         <Card className="mb-3">
           <p className="t-note text-[var(--text-muted)]">{copy.fixas.modoAviso}</p>
@@ -175,6 +195,7 @@ export function Fixas() {
                     expense={e}
                     onToggle={() => updateFixa(e.id, { ativo: !e.ativo })}
                     onDelete={() => apagar(e)}
+                    eur={eur}
                   />
                 ))}
               </ul>
@@ -190,10 +211,10 @@ export function Fixas() {
       >
         <div className="flex items-baseline justify-between">
           <Label>{copy.fixas.totalMensal}</Label>
-          <span className="t-title tnum">{formatEUR(total)}</span>
+          <span className="t-title tnum">{eur(total)}</span>
         </div>
         <p className="t-note mt-1 text-[var(--text-muted)]">
-          {copy.fixas.totalAnual(formatEUR(total * 12))}
+          {copy.fixas.totalAnual(eur(total * 12))}
         </p>
       </div>
 
@@ -210,6 +231,35 @@ export function Fixas() {
             />
           </label>
           <MoneyInput label={copy.fixas.valor} value={valor} onChange={setValor} />
+          <div>
+            <span className="t-label mb-2 block">{copy.fixas.periodicidade}</span>
+            <div className="flex rounded-[var(--radius-sm)] bg-[var(--surface-2)] p-1">
+              {([['mensal', copy.fixas.mensal], ['anual', copy.fixas.anual]] as const).map(
+                ([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => setPeriodicidade(id)}
+                    aria-pressed={periodicidade === id}
+                    className={
+                      'min-h-[44px] flex-1 rounded-[9px] text-[15px] font-medium tracking-[-0.01em] transition-opacity duration-150 ' +
+                      (periodicidade === id
+                        ? 'bg-[var(--segment-active)] text-[var(--text)] shadow-[var(--shadow-pill)]'
+                        : 'text-[var(--text-muted)]')
+                    }
+                  >
+                    {label}
+                  </button>
+                ),
+              )}
+            </div>
+            {periodicidade === 'anual' && valor > 0 ? (
+              <p className="t-note tnum mt-2 text-[var(--text-muted)]">
+                {copy.fixas.porMes(
+                  eur(mensalizado({ id: '', nome: '', valor, periodicidade, categoria, ativo: true })),
+                )}
+              </p>
+            ) : null}
+          </div>
           <div>
             <span className="t-label mb-2 block">{copy.fixas.categoria}</span>
             <div className="flex flex-wrap gap-2">

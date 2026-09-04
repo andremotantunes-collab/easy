@@ -12,10 +12,41 @@ export const copy = {
 
   nav: {
     inicio: 'Início',
-    plano: 'Plano',
-    fixas: 'Fixas',
-    investir: 'Investir',
-    documentos: 'Docs',
+    gastos: 'Gastos',
+    documentos: 'Documentos',
+    perfil: 'Perfil',
+  },
+
+  meses: {
+    esteMes: 'Este mês',
+    aDecorrer: 'A decorrer',
+    fechado: (dia: string) => `Fechado a ${dia}`,
+    vazioTitulo: 'Ainda não há meses guardados.',
+    vazioFrase:
+      'Este é o teu primeiro mês. Quando abrires a app já em outubro, setembro fica guardado aqui como está agora.',
+    comoFunciona:
+      'Um mês fecha na primeira vez que abres a app depois de ele virar — não à meia-noite do dia 1. Não há servidor, e nada corre com a app fechada.',
+    mesFechadoTitulo: (mes: string) => `Mês novo. ${mes} ficou guardado.`,
+    mesFechadoFrase: 'Não mexi em nenhum número teu. O registo fica em Todos os meses.',
+    todosTitulo: 'Todos os meses',
+    todos: 'Ver todos os meses',
+    todosVazio: 'Ainda só há este mês.',
+    todosVazioFrase:
+      'Quando abrires a app já no mês seguinte, este fica guardado aqui tal como está hoje.',
+    aDecorrerNota: 'ainda a decorrer',
+    totalGuardado: 'Guardado ao todo',
+    totalGuardadoFrase: (n: number) =>
+      `em ${n} ${n === 1 ? 'mês fechado' : 'meses fechados'} — investido mais poupado`,
+    colunaMes: 'Mês',
+    colunaGuardado: 'Guardou',
+    colunaSobras: 'Sobrou',
+    verMes: 'Ver o mês',
+    voltarAoMes: 'Voltar a este mês',
+    dispensar: 'Está bem',
+    rendimentoDoMes: 'Rendimento',
+    poupadoTitulo: 'Já guardaste',
+    poupadoFrase: (n: number) => `${n} ${n === 1 ? 'mês fechado' : 'meses fechados'}`,
+    poupadoAte: (mes: string) => `até ${mes}`,
   },
 
   onboarding: {
@@ -39,12 +70,14 @@ export const copy = {
 
   home: {
     titulo: 'O teu bolo.',
-    heroLabel: 'Disponível para gastar',
+    ola: (nome: string) => `Olá, ${nome}`,
+    heroLabel: 'O teu bolo',
+    heroSub: (share: string, total: string) => `${share} de ${total} que entram`,
+    mesLabel: 'Por mês',
     de: (total: string) => `de ${total} que entram`,
-    ajustar: 'Ajustar o plano',
-    porDiaLabel: 'Por dia',
-    porDiaFrase: (valor: string, dia: string) => `Podes gastar ${valor}/dia até ${dia}`,
-    porDiaDefice: 'Sem folga diária: o plano está em défice.',
+    vazioTitulo: 'Falta dizeres quanto recebes.',
+    vazioFrase: 'Escreve o rendimento e o bolo aparece.',
+    vazioBotao: 'Definir rendimento',
     deficeTitulo: 'Plano em défice',
     deficeFrase: 'Estás a contar com mais do que aquilo que entra.',
     sugestoes: {
@@ -58,11 +91,13 @@ export const copy = {
   legenda: {
     sobras: 'Sobras',
     fixas: 'Despesas fixas',
+    gastos: 'Gastos',
     investimentos: 'Investimentos',
     poupanca: 'Poupança',
   },
 
   metricas: {
+    titulo: 'Como está o teu mês',
     taxaPoupanca: 'Taxa de poupança',
     taxaPoupancaFrase: {
       bom: 'Guardas uma boa fatia todos os meses',
@@ -72,13 +107,8 @@ export const copy = {
     pesoFixas: 'Peso das fixas',
     pesoFixasFrase: {
       ok: 'As tuas contas cabem bem no mês',
-      alto: 'As tuas contas fixas comem mais de metade do que ganhas',
+      alto: 'As contas fixas comem mais de metade',
     },
-    fundoEmergencia: 'Fundo de emergência',
-    fundoFrase: (meses: string) => `Estás coberto ${meses} meses`,
-    fundoMeta: 'Meta: 6 meses',
-    custoVida: 'Custo de vida anual',
-    custoVidaFrase: (valor: string) => `Viver como vives custa ${valor}/ano`,
   },
 
   plano: {
@@ -112,10 +142,15 @@ export const copy = {
     totalAnual: (valor: string) => `Isto são ${valor}/ano`,
     vazioTitulo: 'Ainda não tens despesas na lista.',
     vazioFrase: 'Adiciona a renda, o carro, as subscrições. Depois o bolo fica certo.',
-    apagada: (nome: string) => `${nome} apagada`,
+    apagada: (valor: string) => `${valor} apagada`,
     desfazer: 'Desfazer',
     modoAviso: 'Estás no modo percentagem: esta lista não conta para o cálculo.',
     usarLista: 'Usar esta lista',
+    periodicidade: 'Com que frequência',
+    mensal: 'Mensal',
+    anual: 'Anual',
+    porAno: (valor: string) => `${valor}/ano`,
+    porMes: (valor: string) => `${valor}/mês`,
   },
 
   categorias: {
@@ -125,6 +160,75 @@ export const copy = {
     saude: 'Saúde',
     creditos: 'Créditos',
     outros: 'Outros',
+  },
+
+  categoriasGasto: {
+    alimentacao: 'Alimentação',
+    transportes: 'Transportes',
+    casa: 'Casa',
+    saude: 'Saúde',
+    lazer: 'Lazer',
+    compras: 'Compras',
+    outros: 'Outros',
+  },
+
+  gastos: {
+    titulo: 'Gastos',
+    novo: 'Novo gasto',
+    descricao: 'O que foi',
+    descricaoPlaceholder: 'Jantar',
+    valor: 'Quanto',
+    categoria: 'Categoria',
+    quando: 'Quando',
+    hoje: 'Hoje',
+    ontem: 'Ontem',
+    guardar: 'Guardar',
+    apagar: 'Apagar',
+    apagado: (nome: string) => `${nome} apagado.`,
+    desfazer: 'Desfazer',
+
+    restaTitulo: 'Ainda tens para gastar',
+    jaGastaste: (valor: string) => `Já gastaste ${valor} este mês`,
+    semRendimento: 'Diz quanto recebes e isto passa a dizer-te quanto ainda tens.',
+
+    vazioTitulo: 'Ainda não registaste nada.',
+    vazioFrase:
+      'Escreve o que gastaste — «Jantar», 19,90 € — e o número aqui em cima desce na hora.',
+
+    totalHoje: 'Hoje',
+    totalSemana: '7 dias',
+    totalMes: 'Este mês',
+    totalAno: 'Este ano',
+    totalTudo: 'Total',
+
+    periodos: {
+      '7dias': '7 dias',
+      '30dias': '30 dias',
+      '12meses': '12 meses',
+      anos: 'Anos',
+      tudo: 'Tudo',
+    },
+    graficoVazio: 'Sem gastos neste período.',
+    graficoDescricao: (periodo: string, total: string) =>
+      `Gráfico de linhas dos gastos, ${periodo}. Total ${total}.`,
+    media: (valor: string) => `média de ${valor}`,
+    maximo: (valor: string) => `máximo ${valor}`,
+
+    porCategoria: 'Por categoria',
+    semCategorias: 'As categorias aparecem quando registares o primeiro gasto.',
+    limiteDe: (valor: string) => `de ${valor}`,
+    restam: (valor: string) => `restam ${valor}`,
+    acima: (valor: string) => `${valor} acima do limite`,
+    definirLimite: 'Limite mensal',
+    limiteAjuda: 'Deixa a zero para não teres limite nesta categoria.',
+    semLimite: 'Sem limite',
+    guardarLimite: 'Guardar limite',
+
+    fixasTitulo: 'Despesas fixas',
+    fixasFrase: (valor: string) => `${valor} por mês, sempre as mesmas`,
+    fixasNota: 'Já estão descontadas. Não é preciso registá-las aqui.',
+    verFixas: 'Ver as despesas fixas',
+    verMeses: 'Ver todos os meses',
   },
 
   investir: {
@@ -154,7 +258,6 @@ export const copy = {
     titulo: 'Documentos',
     adicionar: 'Adicionar ficheiros',
     largar: 'Larga aqui os ficheiros',
-    todos: 'Todos',
     vazioTitulo: 'Ainda não tens nada guardado.',
     vazioFrase:
       'Guarda aqui o contrato de arrendamento, o seguro do carro, o IRS. Fica tudo no teu telemóvel.',
@@ -169,23 +272,69 @@ export const copy = {
     desfazer: 'Desfazer',
   },
 
-  tags: {
-    contrato: 'Contratos',
-    recibo: 'Recibos',
-    seguro: 'Seguros',
-    imposto: 'Impostos',
-    banco: 'Banco',
-    outro: 'Outros',
+  conta: {
+    criarTitulo: 'Cria o teu perfil',
+    criarFrase: 'Só o nome. Fica neste telemóvel, não há conta nem servidor.',
+    nome: 'Nome',
+    nomePlaceholder: 'Como te chamas',
+    criar: 'Criar perfil',
+    membroDesde: (mes: string) => `Membro desde ${mes}`,
+    resumo: (rendimento: string, reparticao: string) => `${rendimento}/mês · ${reparticao}`,
+    semRendimento: 'Ainda sem rendimento definido',
+    foto: 'Foto de perfil',
+    mudarFoto: 'Mudar foto',
+    apagarFoto: 'Remover foto',
+    dados: 'Dados pessoais',
+    dadosAjuda: 'A app não usa nada disto para calcular. Fica aqui para o teres à mão.',
+    email: 'Email',
+    telemovel: 'Telemóvel',
+    nascimento: 'Data de nascimento',
+    nif: 'NIF',
+    guardar: 'Guardar',
+    guardado: 'Guardado.',
+    seguranca: 'Bloqueio',
+    pin: 'PIN de 4 dígitos',
+    pinAjuda:
+      'Tranca a app neste telemóvel. Não cifra nada: quem tiver o telemóvel desbloqueado e as ferramentas do browser abertas chega aos dados na mesma.',
+    definirPin: 'Definir PIN',
+    mudarPin: 'Mudar PIN',
+    removerPin: 'Remover PIN',
+    pinNovo: 'Escolhe um PIN',
+    pinRepetir: 'Repete o PIN',
+    pinDiferente: 'Os dois PIN não são iguais.',
+    pinIndisponivel: 'Este browser não permite guardar um PIN em segurança.',
+    sair: 'Terminar sessão',
+    sairSemPin: 'Define um PIN para poderes trancar a app.',
+    entrar: 'Introduz o teu PIN',
+    errado: 'PIN errado.',
+    esqueci: 'Esqueci-me do PIN',
+    esqueciAviso:
+      'Não há forma de o recuperar: não existe servidor nem email de reposição. A única saída é apagar o perfil, o orçamento e os documentos deste telemóvel.',
+    esqueciBotao: 'Apagar tudo e recomeçar',
+    apagarPerfil: 'Apagar perfil',
+    apagarPerfilAviso: 'Apaga o nome, a foto, os dados e o PIN. O orçamento e os documentos ficam.',
   },
 
-  definicoes: {
-    titulo: 'Definições',
+  perfil: {
+    titulo: 'Perfil',
+    plano: 'Plano',
+    rendimento: 'Rendimento',
+    repartir: 'Repartição',
+    fixas: 'Despesas fixas',
+    fixasLista: (n: number) => `${n} na lista`,
+    fixasPercentagem: 'Por percentagem',
+    investir: 'Investir',
+    discreto: 'Modo discreto',
+    discretoAjuda: 'Esconde os valores em euros. A repartição continua à vista.',
     tema: 'Tema',
     temaAuto: 'Automático',
     temaClaro: 'Claro',
     temaEscuro: 'Escuro',
-    diaRecebimento: 'Dia de recebimento',
-    diaRecebimentoAjuda: 'Serve para calcular quanto podes gastar por dia.',
+    dados: 'Os teus dados',
+  },
+
+  definicoes: {
+    titulo: 'Os teus dados',
     poupancaAcumulada: 'Poupança já acumulada',
     poupancaAcumuladaAjuda: 'O que já tens de lado. Serve para o fundo de emergência.',
     dados: 'Os teus dados',

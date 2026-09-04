@@ -14,19 +14,42 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = join(root, 'public', 'icons')
 mkdirSync(OUT, { recursive: true })
 
-// Maskable icons are cropped to a safe circle, so the mark sits at 60% and the
-// teal ground bleeds to the edges.
+// Same drawing as the favicon and the in-app mark, scaled by 8: o E. de Easy.
+// A letra e' centrada nos limites do traco e nao do caminho, e o par e'
+// equilibrado pela tinta, para sobreviver ao corte circular de um icone
+// maskable sem parecer torto.
 const svg = (size) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#0F766E"/>
-  <circle cx="256" cy="248" r="118" fill="none" stroke="#FFFFFF" stroke-width="48"
-          stroke-linecap="round" stroke-dasharray="540 201" transform="rotate(-90 256 248)"/>
-  <circle cx="360" cy="345" r="27" fill="#FFFFFF"/>
+  <defs>
+    <linearGradient id="chao" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EDF4FF"/>
+      <stop offset="52%" stop-color="#EAFAFA"/>
+      <stop offset="100%" stop-color="#FDEDF5"/>
+    </linearGradient>
+    <radialGradient id="luz" cx="0.28" cy="0.2" r="0.9">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="letra" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0%" stop-color="#0066E0"/>
+      <stop offset="100%" stop-color="#0E8E9E"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#chao)"/>
+  <rect width="512" height="512" fill="url(#luz)"/>
+  <g transform="translate(-12 0)">
+    <path d="M 328 152.8 L 184 152.8 L 184 359.2 L 328 359.2 M 184 256 L 292 256"
+          fill="none" stroke="url(#letra)" stroke-width="49.6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="400" cy="382.4" r="26.4" fill="url(#letra)"/>
+  </g>
 </svg>`
 
 const browser = await launch()
 try {
-  for (const size of [192, 512]) {
+  // 180 e' a medida que o iOS pede para o icone do atalho no ecra principal;
+  // 192 e 512 sao as do manifesto, para o Android e para a loja de atalhos.
+  for (const size of [180, 192, 512]) {
     const page = await browser.newPage({ viewport: { width: size, height: size } })
     await page.setContent(
       `<body style="margin:0">${svg(size)}</body>`,

@@ -4,7 +4,8 @@ import { Card, Label } from '../components/ui'
 import { MoneyInput } from '../components/MoneyInput'
 import { useBudget } from '../store/budget'
 import { compute, META_FUNDO_MESES, fundoEmergenciaMeses, projecao } from '../lib/finance'
-import { formatEUR, formatPercent } from '../lib/format'
+import { formatPercent } from '../lib/format'
+import { useEUR } from '../lib/money'
 import { OPCOES_INVESTIMENTO, copy } from '../lib/copy'
 
 function RiskDots({ level }: { level: number }) {
@@ -37,6 +38,7 @@ function SplitBar({ capital, juro }: { capital: number; juro: number }) {
 }
 
 export function Investir() {
+  const eur = useEUR()
   const { budget, set } = useBudget()
   const b = useMemo(() => compute(budget), [budget])
 
@@ -54,7 +56,7 @@ export function Investir() {
   const sim = useMemo(() => projecao(mensal, taxa, anos), [mensal, taxa, anos])
 
   return (
-    <Screen title={copy.investir.titulo}>
+    <Screen title={copy.investir.titulo} back="/perfil">
       {/* Top of funnel: the emergency fund comes before any of this. */}
       <Card className="mb-3">
         <Label>{copy.investir.fundoAvisoTitulo}</Label>
@@ -71,9 +73,9 @@ export function Investir() {
 
       <Card className="mb-3">
         <Label>{copy.investir.titulo}</Label>
-        <div className="t-title tnum mt-1">{copy.investir.aInvestir(formatEUR(b.investimentos))}</div>
+        <div className="t-title tnum mt-1">{copy.investir.aInvestir(eur(b.investimentos))}</div>
         <p className="t-note mt-1 text-[var(--text-muted)]">
-          {copy.investir.daoEm(10, formatEUR(dezAnos.total))}
+          {copy.investir.daoEm(10, eur(dezAnos.total))}
         </p>
       </Card>
 
@@ -122,7 +124,7 @@ export function Investir() {
 
         <div className="mt-4 border-t border-[var(--border)] pt-4">
           <Label>{copy.investir.resultado}</Label>
-          <div className="t-hero tnum mt-1 break-all">{formatEUR(sim.total, { cents: false })}</div>
+          <div className="t-hero tnum mt-1 break-all">{eur(sim.total, { cents: false })}</div>
           <SplitBar capital={sim.capital} juro={sim.juro} />
           <div className="mt-3 space-y-2">
             <div className="flex items-center gap-3">
@@ -132,7 +134,7 @@ export function Investir() {
                 aria-hidden
               />
               <span className="t-body flex-1">{copy.investir.capital}</span>
-              <span className="t-body tnum font-semibold">{formatEUR(sim.capital)}</span>
+              <span className="t-body tnum font-semibold">{eur(sim.capital)}</span>
             </div>
             <div className="flex items-center gap-3">
               <span
@@ -141,7 +143,7 @@ export function Investir() {
                 aria-hidden
               />
               <span className="t-body flex-1">{copy.investir.juro}</span>
-              <span className="t-body tnum font-semibold">{formatEUR(sim.juro)}</span>
+              <span className="t-body tnum font-semibold">{eur(sim.juro)}</span>
             </div>
           </div>
         </div>

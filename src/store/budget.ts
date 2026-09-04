@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Budget, FixedExpense } from '../lib/types'
+import type { Budget, Gasto, GastoCategoria, LimitesPorCategoria, FixedExpense, Money } from '../lib/types'
 import { defaultBudget, loadBudget, saveBudget } from '../lib/storage'
 import type { Preset } from '../lib/copy'
 
@@ -11,7 +11,12 @@ type BudgetStore = {
   updateFixa: (id: string, patch: Partial<FixedExpense>) => void
   removeFixa: (id: string) => FixedExpense | undefined
   restoreFixa: (expense: FixedExpense, index: number) => void
+  addGasto: (gasto: Omit<Gasto, 'id'>) => void
+  removeGasto: (id: string) => Gasto | undefined
+  restoreGasto: (gasto: Gasto, index: number) => void
+  setLimite: (categoria: GastoCategoria, valor: Money | null) => void
   applyPreset: (preset: Preset) => void
+  toggleDiscreto: () => void
   replace: (budget: Budget) => void
   reset: () => void
 }
@@ -71,6 +76,36 @@ export const useBudget = create<BudgetStore>((set, get) => ({
     set({ budget: persist({ ...get().budget, despesasFixas: next }) })
   },
 
+  addGasto: (gasto) =>
+    set({
+      budget: persist({
+        ...get().budget,
+        gastos: [...get().budget.gastos, { ...gasto, id: newId() }],
+      }),
+    }),
+
+  removeGasto: (id) => {
+    const atuais = get().budget.gastos
+    const removido = atuais.find((g) => g.id === id)
+    set({ budget: persist({ ...get().budget, gastos: atuais.filter((g) => g.id !== id) }) })
+    return removido
+  },
+
+  restoreGasto: (gasto, index) => {
+    const proximos = [...get().budget.gastos]
+    proximos.splice(Math.min(index, proximos.length), 0, gasto)
+    set({ budget: persist({ ...get().budget, gastos: proximos }) })
+  },
+
+  /** `null` tira o limite. Uma categoria sem limite mostra o que gastaste e
+   *  mais nada — nao se inventa um tecto por omissao. */
+  setLimite: (categoria, valor) => {
+    const limites: LimitesPorCategoria = { ...get().budget.limites }
+    if (valor === null || valor <= 0) delete limites[categoria]
+    else limites[categoria] = valor
+    set({ budget: persist({ ...get().budget, limites }) })
+  },
+
   applyPreset: (preset) =>
     set({
       budget: persist({
@@ -79,6 +114,9 @@ export const useBudget = create<BudgetStore>((set, get) => ({
         alocacao: { investimentos: preset.investimentos, poupanca: preset.poupanca },
       }),
     }),
+
+  toggleDiscreto: () =>
+    set({ budget: persist({ ...get().budget, modoDiscreto: !get().budget.modoDiscreto }) }),
 
   replace: (budget) => set({ budget: persist(budget) }),
 

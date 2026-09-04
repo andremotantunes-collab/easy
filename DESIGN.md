@@ -15,10 +15,10 @@ O que foi consultado antes de escrever CSS, e o que daí se aplicou.
 
 | Regra | Onde vive no código |
 |---|---|
-| Alvos de toque ≥ 44×44 pt | `min-h-[44px]` em todos os botões, linhas de legenda, chips e itens da tab bar; os `input[type=range]` têm 44 px de altura com o *thumb* centrado |
+| Alvos de toque ≥ 44×44 pt | `min-h-[44px]` em todos os botões e chips, 56 px nas linhas de lista e nos itens da tab bar; os `input[type=range]` têm 44 px de altura com o *thumb* centrado |
 | Safe areas | `env(safe-area-inset-top)` no header, `env(safe-area-inset-bottom)` na tab bar, no *sheet*, no *toast* e no rodapé do ecrã |
 | `viewport-fit=cover` | `index.html`, sem o qual as safe areas não são reportadas |
-| Tab bar de 3–5 itens, ícone + label | 5 itens, `lucide-react` a 22 px + label de 11 px |
+| Tab bar de 3–5 itens, ícone + label | 3 itens (Início, Documentos, Perfil), `lucide-react` a 23 px + label de 10,5 px, sobre material translúcido |
 | Margens laterais consistentes | 20 px em todos os ecrãs, 12 px entre cartões |
 | Hierarquia tipográfica clara | escala fixa: Hero 48/52 · Título 28/34 · Valor 22/28 · Corpo 16/22 · Label 13/18 · Nota 12/16 |
 | Um só elemento dominante por ecrã | um único valor em Hero por ecrã, sem exceção |
@@ -55,11 +55,11 @@ capital/juro. Três decisões saíram de lá:
    `DECISIONS.md`), passando a ΔE 18,0 sem perder o mínimo de 3:1 contra
    `--surface`.
 2. **A cor nunca é o único portador de informação.** Cada linha da legenda tem
-   quadrado + nome + valor + percentagem; cada *stat tile* tem valor, barra e uma
-   frase curta. As fatias separam-se por 2 px de intervalo estrutural, não por
-   matiz.
-3. **Marcas finas e eixos discretos.** Traço de 22 px no donut com extremos
-   arredondados, barras de 6 px, sem grelha, sem rótulo em cima de cada fatia.
+   quadrado + nome + valor + percentagem. As fatias separam-se por 2 px de
+   intervalo estrutural, não por matiz.
+3. **Marcas finas e eixos discretos.** Traço de 26 px no donut do Início e de
+   16 px no do Plano, com extremos arredondados, sem grelha e sem rótulo em
+   cima de cada fatia.
 
 Duas verificações do validador **não se aplicam** a este produto e ficam
 conscientemente por passar: a *banda de luminosidade* e o *piso de croma*. Ambas

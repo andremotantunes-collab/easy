@@ -7,7 +7,8 @@ import { Card, Label } from '../components/ui'
 import { MoneyInput } from '../components/MoneyInput'
 import { useBudget } from '../store/budget'
 import { compute } from '../lib/finance'
-import { formatEUR, formatPercent } from '../lib/format'
+import { formatPercent } from '../lib/format'
+import { useEUR } from '../lib/money'
 import { PRESETS, copy } from '../lib/copy'
 import { slicesFrom } from '../lib/slices'
 
@@ -48,6 +49,7 @@ function Slider({
 }
 
 export function Plano() {
+  const eur = useEUR()
   const { budget, set, setAlocacao, applyPreset } = useBudget()
   const navigate = useNavigate()
   const [aviso, setAviso] = useState(false)
@@ -76,14 +78,14 @@ export function Plano() {
   }
 
   return (
-    <Screen title={copy.plano.titulo}>
+    <Screen title={copy.plano.titulo} back="/perfil">
       {/* The live pair: drag a slider, these two move with it. */}
       <div className="mb-4 flex items-center gap-4">
         <Donut
           slices={slices}
           size={132}
           stroke={16}
-          centerValue={formatEUR(b.sobras, { cents: false })}
+          centerValue={eur(b.sobras, { cents: false })}
           centerTone={b.emDefice ? 'negative' : 'normal'}
         />
         <div className="min-w-0 flex-1">
@@ -92,10 +94,10 @@ export function Plano() {
             className="t-title tnum mt-1 truncate"
             style={{ color: b.emDefice ? 'var(--negative)' : 'var(--text)' }}
           >
-            {formatEUR(b.sobras)}
+            {eur(b.sobras)}
           </div>
           <p className="t-note mt-1 text-[var(--text-muted)]">
-            {copy.home.de(formatEUR(b.rendimentoTotal))}
+            {copy.home.de(eur(b.rendimentoTotal))}
           </p>
         </div>
       </div>
@@ -121,14 +123,14 @@ export function Plano() {
           label={copy.plano.investimentos}
           value={budget.alocacao.investimentos}
           max={maxInvest}
-          amount={formatEUR(b.investimentos)}
+          amount={eur(b.investimentos)}
           onChange={(v) => clamp(v, maxInvest, (n) => setAlocacao({ investimentos: n }))}
         />
         <Slider
           label={copy.plano.poupanca}
           value={budget.alocacao.poupanca}
           max={maxPoupanca}
-          amount={formatEUR(b.poupanca)}
+          amount={eur(b.poupanca)}
           onChange={(v) => clamp(v, maxPoupanca, (n) => setAlocacao({ poupanca: n }))}
         />
         {aviso ? <p className="t-note mt-1 text-[var(--warning)]">{copy.plano.limite}</p> : null}
@@ -148,9 +150,9 @@ export function Plano() {
               aria-selected={budget.modoDespesas === modo}
               onClick={() => set({ modoDespesas: modo })}
               className={
-                'min-h-[44px] flex-1 rounded-[8px] text-sm font-medium transition-opacity duration-150 ' +
+                'min-h-[44px] flex-1 rounded-[9px] text-[15px] font-medium tracking-[-0.01em] transition-opacity duration-150 ' +
                 (budget.modoDespesas === modo
-                  ? 'bg-[var(--segment-active)] text-[var(--text)]'
+                  ? 'bg-[var(--segment-active)] text-[var(--text)] shadow-[var(--shadow-pill)]'
                   : 'text-[var(--text-muted)]')
               }
             >
@@ -164,7 +166,7 @@ export function Plano() {
             label={copy.plano.despesas}
             value={budget.despesasPercentagem}
             max={maxFixas}
-            amount={formatEUR(b.despesasFixas)}
+            amount={eur(b.despesasFixas)}
             onChange={(v) => clamp(v, maxFixas, (n) => set({ despesasPercentagem: n }))}
           />
         ) : (
@@ -174,7 +176,7 @@ export function Plano() {
           >
             <span className="t-body">{copy.plano.verFixas}</span>
             <span className="flex items-center gap-1">
-              <span className="t-value tnum">{formatEUR(b.despesasFixas)}</span>
+              <span className="t-value tnum">{eur(b.despesasFixas)}</span>
               <ChevronRight size={18} strokeWidth={1.8} aria-hidden />
             </span>
           </button>

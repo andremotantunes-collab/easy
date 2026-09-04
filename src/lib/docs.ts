@@ -3,13 +3,11 @@
  * no upload, no fetch, no sync. The metadata index lives in the same store so
  * that a single "apagar tudo" clears both.
  */
-import { clear, createStore, del, get, keys, set } from 'idb-keyval'
-import type { Doc, DocTag } from './types'
+import { clear, createStore, del, get, set } from 'idb-keyval'
+import type { Doc } from './types'
 
 const store = createStore('easy-docs', 'blobs')
 const INDEX_KEY = 'docs.index.v1'
-
-export const TAGS: DocTag[] = ['contrato', 'recibo', 'seguro', 'imposto', 'banco', 'outro']
 
 export async function listDocs(): Promise<Doc[]> {
   const index = await get<Doc[]>(INDEX_KEY, store)
@@ -22,17 +20,6 @@ async function writeIndex(docs: Doc[]): Promise<void> {
 
 const newId = (): string =>
   globalThis.crypto?.randomUUID?.() ?? `doc-${Date.now()}-${Math.random().toString(36).slice(2)}`
-
-/** Guesses a starting tag from the file name, so the grid is useful immediately. */
-function guessTag(name: string): DocTag {
-  const n = name.toLowerCase()
-  if (/contrato|arrendamento|contract/.test(n)) return 'contrato'
-  if (/recibo|fatura|invoice/.test(n)) return 'recibo'
-  if (/seguro|apolice|apólice/.test(n)) return 'seguro'
-  if (/irs|imposto|financas|finanças|iuc|imi/.test(n)) return 'imposto'
-  if (/banco|extrato|iban|nib/.test(n)) return 'banco'
-  return 'outro'
-}
 
 export async function addFiles(files: File[]): Promise<Doc[]> {
   const docs = await listDocs()
@@ -47,7 +34,6 @@ export async function addFiles(files: File[]): Promise<Doc[]> {
       nome: file.name,
       tipo: file.type || 'application/octet-stream',
       tamanho: file.size,
-      tags: [guessTag(file.name)],
       criadoEm: new Date().toISOString(),
       blobKey,
     })
@@ -74,14 +60,6 @@ export async function restoreDoc(doc: Doc, blob: Blob, index: number): Promise<v
   await writeIndex(docs)
 }
 
-export async function setTags(id: string, tags: DocTag[]): Promise<void> {
-  await writeIndex((await listDocs()).map((d) => (d.id === id ? { ...d, tags } : d)))
-}
-
 export async function clearDocs(): Promise<void> {
   await clear(store)
-}
-
-export async function countDocs(): Promise<number> {
-  return (await keys(store)).length
 }

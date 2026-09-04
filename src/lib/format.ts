@@ -85,6 +85,47 @@ const MESES_ACENTUADOS = [
 export function monthName(d: Date): string {
   return MESES_ACENTUADOS[d.getMonth()]
 }
+/** Uma data -> 'aaaa-mm'. Vive aqui, com o resto do que formata meses, para
+ *  o motor de calculo lhe poder chamar sem depender do arquivo. */
+export function mesDe(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+/** Uma data -> 'aaaa-mm-dd', na hora local. Nunca por `toISOString`, que passa
+ *  para UTC e manda um gasto das 23h30 para o dia seguinte. */
+export function diaDe(d: Date): string {
+  return `${mesDe(d)}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** 'aaaa-mm-dd' -> 'aaaa-mm'. O mes de um gasto sai sempre do dia dele. */
+export function mesDoDia(dia: string): string {
+  return dia.slice(0, 7)
+}
+
+/** 'aaaa-mm-dd' -> '3 de setembro'; hoje e ontem dizem-se por nome. */
+export function diaPorExtenso(dia: string, hoje = new Date()): string {
+  if (dia === diaDe(hoje)) return 'Hoje'
+  const ontem = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 1)
+  if (dia === diaDe(ontem)) return 'Ontem'
+  const n = Number(dia.slice(8, 10))
+  return `${n} de ${nomeDoMes(dia.slice(0, 7))}`
+}
+
+/** 'aaaa-mm' -> 'setembro' */
+export function nomeDoMes(mes: string): string {
+  const i = Number(mes.slice(5, 7)) - 1
+  return (MESES_ACENTUADOS[i] ?? '').toLowerCase()
+}
+
+/** 'aaaa-mm' -> 'set' */
+export function mesCurto(mes: string): string {
+  return nomeDoMes(mes).slice(0, 3)
+}
+
+export function anoDe(mes: string): string {
+  return mes.slice(0, 4)
+}
+
 export function monthSlug(d: Date): string {
   return MESES[d.getMonth()]
 }

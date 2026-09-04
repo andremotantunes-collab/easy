@@ -1,60 +1,93 @@
-/* Easy. design tokens.
-   Every colour the product uses lives here. Three blocks carry the SAME values:
-   :root (light), the prefers-color-scheme block (system dark) and
-   :root[data-theme="dark"] (manual override), so the toggle wins in both
-   directions and no colour is ever defined only inside a media query. */
+/* Easy. design tokens — sistema Aurora.
+   Tres blocos com os MESMOS valores: :root (claro), o bloco de sistema escuro
+   e :root[data-theme="dark"], para o interruptor ganhar nos dois sentidos e
+   nenhuma cor existir apenas dentro de uma media query.
+
+   As tres cores da Aurora (#0080FF, #FF1493, #00FFFF) sao vivas de mais para
+   levarem texto por cima: entram tal e qual no campo de luz do fundo, onde
+   sao atmosfera, e entram escurecidas onde tem de carregar informacao. E' a
+   diferenca entre a cor da marca e a cor sobre superficie. */
 
 :root {
+  /* campo de luz — as cores da Aurora sem tocar */
+  --aurora-1: #0080FF;
+  --aurora-2: #FF1493;
+  --aurora-3: #00FFFF;
+  --aurora-opacidade: 0.36;
+  --aurora-mistura: multiply;
+  --aurora-desfoque: 46px;
+
   /* superficies */
-  --bg:            #FFFFFF;
-  --surface:       #F5F5F6;
-  --surface-2:     #EBEBED;
-  --border:        #E1E1E4;
-  /* Cards carry a hairline in light and none in dark, per the design system. */
-  --card-border:   #E1E1E4;
-  /* Selected pill of a segmented control: must read LIGHTER than its track in
-     both themes, so it cannot simply be --bg. */
+  --bg:            #F6F8FC;
+  --surface:       #FFFFFF;
+  --surface-2:     #EDF0F7;
+  --border:        #E2E7F0;
+  --card-border:   #E8EDF6;
   --segment-active: #FFFFFF;
 
-  /* texto */
-  --text:          #0A0A0B;   /* numeros e titulos */
-  --text-muted:    #5F5F66;   /* labels, legendas */
+  /* texto — preto puro nunca, tinta azulada sempre */
+  --text:          #0B0B14;
+  --text-muted:    #474C60;
 
-  /* acento unico */
-  --accent:        #0F766E;   /* o "bolo" / accao primaria */
+  /* acento */
+  --accent:        #0066E0;
   --accent-text:   #FFFFFF;
 
-  /* categorias do donut - UMA cor (o bolo) + tres cinzentos que saem da conta.
-     Tons re-escalonados a partir dos do briefing para passarem o piso de
-     separacao de visao normal do validador (ver DECISIONS.md). */
-  --cat-sobras:    #0F766E;   /* Sobras - o bolo (acento)    5.0:1 vs surface */
-  --cat-fixas:     #26262E;   /* Despesas fixas             13.9:1 */
-  --cat-invest:    #55555D;   /* Investimentos               6.7:1 */
-  --cat-poupanca:  #8D8D95;   /* Poupanca / objetivos        3.0:1 */
+  /* categorias do donut: azul, tinta, magenta, ciano — complementares aos
+     pares, cada uma acima de 3:1 contra a superficie */
+  --cat-sobras:    #0066E0;
+  --cat-sobras-2:  #0E8E9E;
+  --cat-fixas:     #23233A;
+  --cat-fixas-2:   #3B3B63;
+  --cat-invest:    #D1147F;
+  --cat-invest-2:  #8B2FC9;
+  --cat-poupanca:  #0E8E9E;
+  --cat-poupanca-2: #0A6ED6;
+  /* O custo que so' existe num mes: laranja queimado, a unica cor quente do
+     anel. Separa-se da tinta das fixas por 1,34:1 — o mesmo piso a que as
+     vizinhas ja' viviam — e da' 6,84:1 contra a superficie. */
+  --cat-custos:    #8F4700;
+  --cat-custos-2:  #B4530A;
 
-  /* semantico (usar com parcimonia) */
-  --positive:      #15803D;
-  --warning:       #B45309;
-  --negative:      #B91C1C;
+  /* semantico */
+  --positive:      #0F7B46;
+  --warning:       #A85A06;
+  --negative:      #C41C3F;
 
-  --radius:        16px;
+  /* raios: 0.75rem nos componentes, 4px na base */
+  --radius:        12px;
   --radius-sm:     10px;
+  --radius-xs:     4px;
+
+  --shadow-card:   0 2px 12px rgba(11, 11, 20, 0.06);
+  --shadow-pill:   0 1px 3px rgba(11, 11, 20, 0.10);
+  --material:      rgba(246, 248, 252, 0.84);
+  /* O anel assenta no cartao em vez de flutuar sobre ele. */
+  --donut-sombra:  0 5px 12px rgba(11, 11, 20, 0.14);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0B0B0C; --surface: #151517; --surface-2: #1F1F22; --border: #2A2A2E; --card-border: transparent; --segment-active: #34343A;
-    --text: #FAFAFA; --text-muted: #A1A1AA;
-    --accent: #2DD4BF; --accent-text: #0B0B0C;
-    --cat-sobras: #2DD4BF; --cat-fixas: #EDEDF2; --cat-invest: #A6A6AE; --cat-poupanca: #62626A;
-    --positive: #4ADE80; --warning: #FBBF24; --negative: #F87171;
+    --aurora-opacidade: 0.46; --aurora-mistura: screen;
+    --bg: #07070E; --surface: #12121C; --surface-2: #1B1B29; --border: #2A2A3C; --card-border: #22222F; --segment-active: #33334A;
+    --text: #F4F5FA; --text-muted: #A9AAC0;
+    --accent: #4DA3FF; --accent-text: #07070E;
+    --cat-sobras: #4DA3FF; --cat-sobras-2: #35E0E0; --cat-fixas: #EDEDF5; --cat-fixas-2: #B9BAD8; --cat-invest: #FF5FA8; --cat-invest-2: #C77DFF; --cat-poupanca: #35E0E0; --cat-poupanca-2: #4DA3FF; --cat-custos: #FFA94D; --cat-custos-2: #FFC078;
+    --positive: #3DD68C; --warning: #FBBF24; --negative: #FF6B81;
+    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.5);
+    --shadow-pill: 0 1px 3px rgba(0, 0, 0, 0.6);
+    --material: rgba(7, 7, 14, 0.84); --donut-sombra: 0 5px 14px rgba(0, 0, 0, 0.55);
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #0B0B0C; --surface: #151517; --surface-2: #1F1F22; --border: #2A2A2E; --card-border: transparent; --segment-active: #34343A;
-  --text: #FAFAFA; --text-muted: #A1A1AA;
-  --accent: #2DD4BF; --accent-text: #0B0B0C;
-  --cat-sobras: #2DD4BF; --cat-fixas: #EDEDF2; --cat-invest: #A6A6AE; --cat-poupanca: #62626A;
-  --positive: #4ADE80; --warning: #FBBF24; --negative: #F87171;
+  --aurora-opacidade: 0.46; --aurora-mistura: screen;
+  --bg: #07070E; --surface: #12121C; --surface-2: #1B1B29; --border: #2A2A3C; --card-border: #22222F; --segment-active: #33334A;
+  --text: #F4F5FA; --text-muted: #A9AAC0;
+  --accent: #4DA3FF; --accent-text: #07070E;
+  --cat-sobras: #4DA3FF; --cat-sobras-2: #35E0E0; --cat-fixas: #EDEDF5; --cat-fixas-2: #B9BAD8; --cat-invest: #FF5FA8; --cat-invest-2: #C77DFF; --cat-poupanca: #35E0E0; --cat-poupanca-2: #4DA3FF; --cat-custos: #FFA94D; --cat-custos-2: #FFC078;
+  --positive: #3DD68C; --warning: #FBBF24; --negative: #FF6B81;
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.5);
+  --shadow-pill: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --material: rgba(7, 7, 14, 0.84); --donut-sombra: 0 5px 14px rgba(0, 0, 0, 0.55);
 }
