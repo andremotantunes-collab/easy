@@ -30,19 +30,35 @@ Outros comandos:
 | `npm run check:contrast` | Valida todos os pares de contraste nos dois temas |
 | `npm run icons` | Regenera os ícones PWA a partir do SVG |
 | `npm run shots -- 9` | Captura os ecrãs nos dois temas e monta a folha de contacto; acrescenta `max` no fim para o iPhone 13 Pro Max |
+| `npm run deploy` | Compila e publica no GitHub Pages, em `/easy/` |
 | `npm run verify` | Verificação automática a 390×844 **e** 430×932: rede, scroll horizontal, alvos de toque, campos ≥ 16 px |
 | `npm run offline` | Escreve `Easy.html`: a app inteira num ficheiro, para levar para o telemóvel |
 
-## Instalar no telemóvel
+## No telemóvel
 
-**iPhone (Safari):** abre o endereço de rede → botão **Partilhar** → **Adicionar
-ao ecrã principal** → **Adicionar**. Fica com ícone próprio e abre sem barra de
-endereço.
+A app está no ar aqui, sem conta e sem login:
+
+**<https://andremotantunes-collab.github.io/easy/>**
+
+**iPhone (Safari):** abre o endereço → botão **Partilhar** → **Adicionar ao
+ecrã principal** → **Adicionar**. Fica com o ícone do **E.**, abre sem barra de
+endereço, e a partir da primeira abertura **funciona sem rede** — o *service
+worker* guarda tudo o que é preciso.
 
 **Android (Chrome):** abre o endereço → menu **⋮** → **Instalar aplicação**.
 
-Depois do primeiro carregamento a app **funciona offline**: o *service worker*
-guarda tudo o que é preciso.
+Os dados continuam a ser só teus e só do telemóvel: o endereço serve a app,
+nunca vê um número teu.
+
+Para publicar uma versão nova:
+
+```bash
+npm run deploy
+```
+
+Compila com o prefixo `/easy/`, deixa um `404.html` igual ao `index.html` — é
+assim que o Pages devolve a app quando se recarrega `/easy/gastos` — e empurra
+o resultado para o ramo `gh-pages`. O código-fonte fica no `master`.
 
 ## Levar num ficheiro só
 

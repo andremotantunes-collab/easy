@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "preview:build": "vite build -c vite.config.preview.ts && node scripts/preview-single-file.mjs",
     "offline": "vite build -c vite.config.preview.ts && node scripts/preview-single-file.mjs --completo",
+    "deploy": "node scripts/deploy-pages.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "check:contrast": "node --experimental-strip-types scripts/contrast-check.ts",

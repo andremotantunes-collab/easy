@@ -574,6 +574,36 @@ Passaram a ser quatro: Início, Gastos, Documentos, Perfil. Um gasto regista-se
 várias vezes por dia, e o que está a três toques de distância não se regista.
 Cabem os quatro a 390 px, que é a medida mais estreita que a app promete.
 
-## 32. Âmbito que ficou fora
+## 32. Um endereço, sem login
+
+Um preview alojado atrás de uma sessão iniciada não é uma app no telemóvel: é
+uma página que se abre depois de fazer login. A app passou a viver num
+endereço público — `andremotantunes-collab.github.io/easy` — que se abre e se
+instala no ecrã principal como qualquer outra.
+
+**O que fica público é o código, e mais nada.** Não há servidor, não há conta,
+não há chamada de rede em tempo de execução: o endereço entrega os ficheiros e
+acabou. Todos os números continuam no `localStorage` e no IndexedDB do
+telemóvel, e nunca saem de lá. É a mesma promessa de sempre, agora com um sítio
+por onde entrar.
+
+Três detalhes que isto obrigou a resolver:
+
+- **O prefixo.** A app vive dentro de `/easy/` e não na raiz. O prefixo entra
+  por variável de ambiente (`BASE_PATH`), e não escrito na configuração, para o
+  `npm run dev`, as capturas e o `npm run verify` continuarem a correr na raiz
+  sem prefixo nenhum. O router recebe-o por `import.meta.env.BASE_URL`.
+- **O `404.html`.** O Pages não sabe de rotas: recarregar `/easy/gastos` dava
+  404. Uma cópia do `index.html` chamada `404.html` resolve — o Pages devolve-a,
+  a app arranca, e o router trata do resto.
+- **Os ícones do manifesto** passaram a caminhos relativos, para o mesmo
+  ficheiro servir na raiz e dentro de `/easy/`.
+
+Está tudo verificado contra o endereço a sério, e não só contra a build local:
+abre, faz o *onboarding*, regista um gasto, sobrevive a recarregar um caminho
+fundo, e o *service worker* regista — que é o que faz a app funcionar sem rede
+depois da primeira visita.
+
+## 33. Âmbito que ficou fora
 
 Nada foi cortado em silêncio. Ver a secção "O que ficou de fora" no `README.md`.
