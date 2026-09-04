@@ -99,15 +99,17 @@ export const copy = {
   metricas: {
     titulo: 'Como está o teu mês',
     taxaPoupanca: 'Taxa de poupança',
+    // Um veredicto, não uma frase. O número já disse quanto; isto só tem de
+    // dizer se é bom ou mau, e cabe numa linha.
     taxaPoupancaFrase: {
-      bom: 'Guardas uma boa fatia todos os meses',
-      medio: 'Dá para subir mais um pouco',
-      baixo: 'Estás a guardar muito pouco',
+      bom: 'Boa',
+      medio: 'Dá para subir',
+      baixo: 'Pouco',
     },
     pesoFixas: 'Peso das fixas',
     pesoFixasFrase: {
-      ok: 'As tuas contas cabem bem no mês',
-      alto: 'As contas fixas comem mais de metade',
+      ok: 'Cabem bem',
+      alto: 'Pesadas',
     },
   },
 

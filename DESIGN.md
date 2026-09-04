@@ -61,6 +61,12 @@ capital/juro. Três decisões saíram de lá:
    16 px no do Plano, com extremos arredondados, sem grelha e sem rótulo em
    cima de cada fatia.
 
+**Uma exceção, consciente e delimitada:** as duas *stat tiles* do «Como está o
+teu mês» são coloridas a sério — número, barra e pastilha do veredicto na cor
+da métrica. Ali a cor **é** a informação (o mês está bem ou está mal), ao
+contrário do anel, onde separa categorias sem juízo de valor. A regra 2 acima
+mantém-se: a palavra do veredicto está sempre escrita. Ver a decisão 35.
+
 Duas verificações do validador **não se aplicam** a este produto e ficam
 conscientemente por passar: a *banda de luminosidade* e o *piso de croma*. Ambas
 existem para paletas categóricas coloridas; aqui o donut é deliberadamente

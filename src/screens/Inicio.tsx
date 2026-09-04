@@ -278,27 +278,30 @@ export function Inicio() {
           </Card>
 
           <Label className="mb-2">{copy.metricas.titulo}</Label>
+          {/* A tinta quase preta das fixas (--cat-fixas) é a cor certa para uma
+              fatia do anel e a errada para um veredicto: um mês saudável ficava
+              com o cartão apagado, e um mês saudável é a maioria dos meses.
+              Contas que cabem são o azul-ciano da casa; contas pesadas é que
+              ganham o âmbar. */}
           <div className="grid grid-cols-2 gap-3">
-            <>
-              <StatTile
-                label={copy.metricas.taxaPoupanca}
-                value={formatPercent(taxa)}
-                ratio={taxa / 0.3}
-                color={taxaColor}
-                color2={taxaColor2}
-                phrase={copy.metricas.taxaPoupancaFrase[nivel]}
-                onClick={atual ? () => navigate('/plano') : undefined}
-              />
-              <StatTile
-                label={copy.metricas.pesoFixas}
-                value={formatPercent(peso)}
-                ratio={peso}
-                color={pesoAlto ? 'var(--warning)' : 'var(--cat-fixas)'}
-                color2={pesoAlto ? 'var(--cat-invest)' : 'var(--cat-fixas-2)'}
-                phrase={pesoAlto ? copy.metricas.pesoFixasFrase.alto : copy.metricas.pesoFixasFrase.ok}
-                onClick={atual ? () => navigate('/fixas') : undefined}
-              />
-            </>
+            <StatTile
+              label={copy.metricas.taxaPoupanca}
+              value={formatPercent(taxa)}
+              ratio={taxa / 0.3}
+              color={taxaColor}
+              color2={taxaColor2}
+              phrase={copy.metricas.taxaPoupancaFrase[nivel]}
+              onClick={atual ? () => navigate('/plano') : undefined}
+            />
+            <StatTile
+              label={copy.metricas.pesoFixas}
+              value={formatPercent(peso)}
+              ratio={peso}
+              color={pesoAlto ? 'var(--warning)' : 'var(--cat-sobras)'}
+              color2={pesoAlto ? 'var(--cat-invest)' : 'var(--cat-sobras-2)'}
+              phrase={pesoAlto ? copy.metricas.pesoFixasFrase.alto : copy.metricas.pesoFixasFrase.ok}
+              onClick={atual ? () => navigate('/fixas') : undefined}
+            />
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">

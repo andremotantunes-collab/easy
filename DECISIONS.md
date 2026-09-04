@@ -678,6 +678,34 @@ traz o bilhete da fatura mas não o ficheiro, porque os blobs não cabem no JSON
 A app diz isso na cara, com uma frase, em vez de mostrar uma moldura vazia sem
 explicação.
 
-## 35. Âmbito que ficou fora
+## 35. «Como está o teu mês» estava morto
+
+Os dois cartões das métricas tinham quatro andares: rótulo, número, barra, e
+uma frase de duas linhas em cinzento — «Guardas uma boa fatia todos os meses».
+A frase era a coisa mais alta do cartão a dizer o que o número já tinha dito, e
+o cinzento fazia dela ruído.
+
+Passou a ser uma **pastilha de uma palavra**, na cor da métrica: «Boa»,
+«Pouco», «Cabem bem», «Pesadas». Quem quer o número lê o número; quem quer
+saber se é bom ou mau vê a cor antes de ler a palavra. O cartão perdeu uma
+linha e ganhou o único sítio do ecrã onde a cor é mesmo a informação.
+
+E havia uma cor errada. O peso das fixas usava `--cat-fixas` — a tinta quase
+preta, #23233A. É a cor certa para uma fatia do anel, onde ela é uma
+categoria entre outras, e a errada para um veredicto: um mês **saudável**
+ficava com o cartão apagado, e um mês saudável é a maioria dos meses. Contas
+que cabem passaram a ser o azul-ciano da casa (`--cat-sobras`), e o âmbar ficou
+reservado para as contas que pesam a sério. A lavagem de fundo subiu de 13 %
+para 22 %.
+
+Isto afasta-se, de propósito e só aqui, do princípio da secção 4 do
+`DESIGN.md` — «um único acento de cor», «reads gray é o objetivo». O anel
+continua quase monocromático, porque lá a cor separa categorias que não têm
+juízo de valor nenhum. Nestes dois cartões a cor **é** o juízo, e um veredicto
+sobre o teu mês em cinzento não é sóbrio, é apagado. O que se manteve foi a
+regra que interessa: a cor nunca é o único portador — a palavra está lá dentro
+da pastilha.
+
+## 36. Âmbito que ficou fora
 
 Nada foi cortado em silêncio. Ver a secção "O que ficou de fora" no `README.md`.

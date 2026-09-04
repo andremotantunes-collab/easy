@@ -61,7 +61,14 @@ export function Bar({
   )
 }
 
-/** One metric: label, value in its own colour, bar, and a short read of it. */
+/**
+ * Uma metrica: rotulo, numero na cor dela, barra, e o veredicto numa pastilha.
+ *
+ * O veredicto era uma frase de duas linhas em cinzento — a coisa mais alta do
+ * cartao a dizer o que o numero ja' tinha dito. Passou a ser uma pastilha de
+ * uma palavra, na cor da metrica: quem quer o numero le' o numero, quem quer
+ * saber se e' bom ou mau ve' a cor antes de ler.
+ */
 export function StatTile({
   label,
   value,
@@ -84,27 +91,37 @@ export function StatTile({
     <Wrapper
       onClick={onClick}
       className={clsx(
-        'entra flex w-full flex-col gap-2.5 rounded-[var(--radius)] p-4 text-left',
+        'entra flex w-full flex-col items-start gap-2.5 rounded-[var(--radius)] p-4 text-left',
         'bg-[var(--surface)] border border-[var(--card-border)] shadow-[var(--shadow-card)]',
         onClick ? 'transition-opacity duration-150 active:opacity-60' : '',
       )}
       style={{
-        // A wash of the metric's own colour, coming in from the top left and
-        // gone by two thirds. Where color-mix is not understood the whole
-        // declaration is dropped and the plain surface stays — which is why
-        // the surface is still a class and not part of this gradient.
-        backgroundImage: `linear-gradient(152deg, color-mix(in srgb, ${color} 13%, transparent) 0%, transparent 66%)`,
+        // A lavagem da cor da propria metrica, a entrar pelo canto de cima e
+        // gasta a quatro quintos. Onde `color-mix` nao e' entendido a
+        // declaracao inteira cai e fica a superficie limpa — e' por isso que a
+        // superficie continua a ser uma classe e nao faz parte deste gradiente.
+        backgroundImage: `linear-gradient(152deg, color-mix(in srgb, ${color} 22%, transparent) 0%, transparent 80%)`,
       }}
     >
       <Label>{label}</Label>
       <div
         className="tnum leading-none"
-        style={{ color, fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.03em' }}
+        style={{ color, fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.03em' }}
       >
         {value}
       </div>
       <Bar ratio={ratio} color={color} color2={color2} />
-      <div className="t-note text-[var(--text-muted)]">{phrase}</div>
+      <span
+        className="t-note self-start rounded-full px-2 py-0.5 font-semibold"
+        style={{
+          color,
+          // Sem `color-mix` fica so' a palavra na cor da metrica, que continua
+          // a ler-se: a pastilha e' um reforco, nao o portador da informacao.
+          backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`,
+        }}
+      >
+        {phrase}
+      </span>
     </Wrapper>
   )
 }
