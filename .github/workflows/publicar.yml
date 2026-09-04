@@ -1,0 +1,64 @@
+# Publica a app no GitHub Pages a cada envio para o master.
+#
+# Os testes correm ANTES de publicar, e por isso uma versão com testes a falhar
+# nunca chega ao telemóvel. O `npm run build` já traz consigo o portão de
+# contraste, o teste da marca e o TypeScript.
+name: Publicar
+
+on:
+  push:
+    branches: [master]
+  # Para poder republicar à mão sem ter de mexer em código.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Duas publicações ao mesmo tempo dariam um site meio de cada. A que está a
+# meio termina; as que estiverem à espera são substituídas pela mais recente.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Testes
+        run: npm test
+
+      - name: Compilar para /easy/
+        run: npm run build
+        env:
+          BASE_PATH: /easy/
+
+      # O Pages não sabe de rotas: sem isto, recarregar /easy/gastos dá 404.
+      # Sendo uma cópia do index, a app arranca e o router trata do resto.
+      - name: Rede de segurança para os caminhos fundos
+        run: cp dist/index.html dist/404.html
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  publicar:
+    needs: compilar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicacao.outputs.page_url }}
+    steps:
+      - id: publicacao
+        uses: actions/deploy-pages@v4
